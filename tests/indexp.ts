@@ -5,8 +5,7 @@ const client = new Client();
 const token = ""
 
 client.on('ready', async () => {
-    console.log(`Logged in as ${client.user.username}!`);
-    console.log('Setting presence...');
+    console.log(`Logged in as ${client.user.username}`);
 
     client.setPresence({
         activities: [{
