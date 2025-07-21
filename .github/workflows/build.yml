@@ -1,0 +1,51 @@
+name: Run Build & Test
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  issues:
+    types: [opened]
+
+jobs:
+  build:
+    if: github.event_name != 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm run build
+      - run: npm test # odkomentuj jeśli masz testy
+
+  issue-echo:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm ci
+      - name: Run specific tests based on issue title
+        run: |
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          if [[ "$ISSUE_TITLE" == *"message"* ]]; then
+            npm test tests/workflow/structures/Message.test.ts
+          elif [[ "$ISSUE_TITLE" == *"gateway"* ]]; then
+            npm test tests/workflow/gateway/GatewayManager.test.ts
+          elif [[ "$ISSUE_TITLE" == *"client"* ]]; then
+            npm test tests/workflow/client.test.ts
+          elif [[ "$ISSUE_TITLE" == *"command"* || "$ISSUE_TITLE" == *"slash"* ]]; then
+            npm test tests/workflow/types/ApplicationCommand.test.ts tests/workflow/types/SlashCommand.test.ts
+          else
+            echo "No specific keywords found. Running all tests."
+            npm test
+          fi
+      - name: Echo issue info
+        run: echo "Issue #${{ github.event.issue.number }} created by ${{ github.actor }}: ${{ github.event.issue.title }}"
