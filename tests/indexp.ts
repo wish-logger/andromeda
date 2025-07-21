@@ -2,7 +2,7 @@ import { Client } from '../src/client/Client';
 
 const client = new Client();
 
-const token = "MTM5NjkwNzEwNzQ4NzMxODEzNg.GE5ict.mFIkNgHtZxQIFQZnyfiNeIGXwIzjtFAKeuL9wc"
+const token = ""
 
 client.on('ready', async () => {
     console.log(`Logged in as ${client.user.username}!`);
@@ -59,7 +59,7 @@ client.on('ready', async () => {
 });
 
 client.on('messageCreate', (message) => {
-    // TODO: Add channel ID and embeds
+    // TODO: Embeds
     // for now just send new stuff in terminal
     console.log(`New message in #${message.channel_id}: ${message.content}`);
 });

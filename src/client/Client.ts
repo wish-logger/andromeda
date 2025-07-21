@@ -1,11 +1,11 @@
 import { GatewayManager } from '../gateway/GatewayManager';
 import { EventEmitter } from 'events';
-import { PresenceData } from '../types/Presence';
+import { PresenceData, ActivityType } from '../types/Presence';
 import { User } from '../structures/User';
 import { RestManager } from '../rest/RestManager';
 import { InteractionManager } from '../managers/InteractionManager';
-import { ApplicationCommandData } from '../types/ApplicationCommand';
-import { CogManager } from '../managers/CogManager';
+import { ApplicationCommand, ApplicationCommandData } from '../types/ApplicationCommand';
+import { ModuleManager } from '../managers/ModuleManager';
 
 /**
  * The main client for interacting with the Discord API.
@@ -33,10 +33,10 @@ export class Client extends EventEmitter {
      */
     public interactions: InteractionManager;
     /**
-     * Manages the loading and unloading of cogs (modules).
-     * @type {CogManager}
+     * Manages the loading and unloading of modules.
+     * @type {ModuleManager}
      */
-    public cogs: CogManager;
+    public modules: ModuleManager;
     /**
      * The user object for the logged-in bot.
      * This property is guaranteed to be set after the 'READY' event.
@@ -52,7 +52,7 @@ export class Client extends EventEmitter {
         this.gateway = new GatewayManager(this);
         this.rest = new RestManager(this);
         this.interactions = new InteractionManager(this);
-        this.cogs = new CogManager(this);
+        this.modules = new ModuleManager(this);
     }
 
     /**
@@ -67,10 +67,22 @@ export class Client extends EventEmitter {
     /**
      * Sets the bot's presence (status and activity).
      * To set only the status without any activity, you can pass an empty `activities` array or omit the `activities` property.
+     * If `ActivityType.CUSTOM` is used and `state` is not provided, `name` will be used as `state`.
      * @param {Partial<PresenceData>} data The presence data to set.
      */
     public setPresence(data: Partial<PresenceData>): void {
-        this.gateway.updatePresence(data);
+        // Deep copy to avoid modifying the original object
+        const presenceData = JSON.parse(JSON.stringify(data));
+
+        if (presenceData.activities && Array.isArray(presenceData.activities)) {
+            presenceData.activities = presenceData.activities.map((activity: any) => {
+                if (activity.type === ActivityType.CUSTOM && !activity.state && activity.name) {
+                    return { ...activity, state: activity.name };
+                }
+                return activity;
+            });
+        }
+        this.gateway.updatePresence(presenceData);
     }
 
     /**
@@ -78,7 +90,7 @@ export class Client extends EventEmitter {
      * @param {ApplicationCommandData} command The command data.
      * @returns {Promise<any>} The registered command data.
      */
-    public async registerGlobalCommand(command: ApplicationCommandData): Promise<any> {
+    public async registerGlobalCommand(command: ApplicationCommandData): Promise<ApplicationCommand> {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
@@ -89,9 +101,9 @@ export class Client extends EventEmitter {
      * Registers a guild-specific application command.
      * @param {string} guildId The ID of the guild.
      * @param {ApplicationCommandData} command The command data.
-     * @returns {Promise<any>} The registered command data.
+     * @returns {Promise<ApplicationCommand>} The registered command data.
      */
-    public async registerGuildCommand(guildId: string, command: ApplicationCommandData): Promise<any> {
+    public async registerGuildCommand(guildId: string, command: ApplicationCommandData): Promise<ApplicationCommand> {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
@@ -100,9 +112,9 @@ export class Client extends EventEmitter {
 
     /**
      * Fetches all global application commands.
-     * @returns {Promise<any[]>} An array of global command data.
+     * @returns {Promise<ApplicationCommand[]>} An array of global command data.
      */
-    public async fetchGlobalCommands(): Promise<any[]> {
+    public async fetchGlobalCommands(): Promise<ApplicationCommand[]> {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
@@ -112,9 +124,9 @@ export class Client extends EventEmitter {
     /**
      * Fetches all guild-specific application commands.
      * @param {string} guildId The ID of the guild.
-     * @returns {Promise<any[]>} An array of guild command data.
+     * @returns {Promise<ApplicationCommand[]>} An array of guild command data.
      */
-    public async fetchGuildCommands(guildId: string): Promise<any[]> {
+    public async fetchGuildCommands(guildId: string): Promise<ApplicationCommand[]> {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }

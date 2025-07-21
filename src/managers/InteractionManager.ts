@@ -40,7 +40,7 @@ export class InteractionManager {
                 break;
             // TODO: Handle other interaction types (MESSAGE_COMPONENT, MODAL_SUBMIT, etc.)
             default:
-                console.log(`Unhandled interaction type: ${interaction.type}`);
+                console.warn(`Unhandled interaction type: ${interaction.type}`);
                 break;
         }
     }

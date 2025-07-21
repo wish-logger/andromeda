@@ -56,16 +56,10 @@ export class GatewayManager {
         }
 
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            console.log('WebSocket is already connected.');
             return;
         }
 
-        console.log('Connecting to the Discord Gateway...');
         this.ws = new WebSocket(this.gatewayURL);
-
-        this.ws.on('open', () => {
-            console.log('Successfully connected to the Discord Gateway.');
-        });
 
         this.ws.on('message', (data) => {
             const payload = JSON.parse(data.toString());
@@ -73,7 +67,7 @@ export class GatewayManager {
         });
 
         this.ws.on('close', (code, reason) => {
-            console.log(`Gateway connection closed: ${code} - ${reason.toString()}`);
+            console.warn(`Gateway connection closed: ${code} - ${reason.toString()}`);
             if (this.heartbeatInterval) {
                 clearInterval(this.heartbeatInterval);
                 this.heartbeatInterval = null;
@@ -108,7 +102,6 @@ export class GatewayManager {
                 this.identify();
                 break;
             case 11: // Heartbeat ACK
-                console.log('Received Heartbeat ACK.');
                 break;
             case 0: // Dispatch
                 const eventName = this._toCamelCase(t);
@@ -118,7 +111,7 @@ export class GatewayManager {
                 this.client.emit(eventName, d);
                 break;
             default:
-                console.log('Received unhandled opcode:', op);
+                console.warn('Received unhandled opcode:', op);
         }
     }
 
@@ -129,7 +122,6 @@ export class GatewayManager {
      * @returns {void}
      */
     private startHeartbeat(interval: number): void {
-        console.log(`Starting heartbeat every ${interval}ms.`);
         this.heartbeatInterval = setInterval(() => {
             this.sendHeartbeat();
         }, interval);
@@ -142,7 +134,6 @@ export class GatewayManager {
      */
     private sendHeartbeat(): void {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            console.log('Sending Heartbeat...');
             this.ws.send(JSON.stringify({ op: 1, d: this.lastSequence }));
         }
     }
@@ -157,7 +148,6 @@ export class GatewayManager {
         if (!this.ws) {
             throw new Error("WebSocket is not initialized.");
         }
-        console.log('Identifying with the Gateway...');
         const payload = {
             op: 2,
             d: {

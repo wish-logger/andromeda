@@ -1,5 +1,18 @@
 /**
- * Represents an application command (slash command).
+ * Represents an application command (slash command) data for registration.
+ * This interface is used when sending command data to Discord.
+ */
+export interface ApplicationCommandData {
+    name: string;
+    description: string;
+    options?: ApplicationCommandOption[];
+    default_permission?: boolean;
+    type?: ApplicationCommandType;
+}
+
+/**
+ * Represents an application command (slash command) as returned by Discord.
+ * This interface includes the 'id' assigned by Discord.
  */
 export interface ApplicationCommand {
     id: string;
@@ -10,6 +23,7 @@ export interface ApplicationCommand {
     options?: ApplicationCommandOption[];
     default_permission?: boolean;
     version: string;
+    type: ApplicationCommandType;
 }
 
 /**
@@ -30,6 +44,15 @@ export interface ApplicationCommandOption {
 export interface ApplicationCommandOptionChoice {
     name: string;
     value: string | number;
+}
+
+/**
+ * Enum for application command types.
+ */
+export enum ApplicationCommandType {
+    CHAT_INPUT = 1, // Slash commands
+    USER = 2,       // User context menus
+    MESSAGE = 3,    // Message context menus
 }
 
 /**

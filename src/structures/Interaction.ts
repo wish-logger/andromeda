@@ -1,5 +1,6 @@
 import { Client } from '../client/Client';
 import { Interaction as InteractionPayload, InteractionType } from '../types/Interaction';
+import { MessageFlags } from '../types/Message';
 
 /**
  * Represents a Discord interaction.
@@ -41,18 +42,32 @@ export class Interaction {
 
     /**
      * Replies to the interaction.
-     * @param {string | object} options The message content or an object with message options.
+     * @param {string | { content?: string; embeds?: any[]; ephemeral?: boolean }} options The message content or an object with message options.
+     * @param {boolean} [options.ephemeral] Whether the reply should be ephemeral (only visible to the user who invoked the interaction). Defaults to `false`.
      * @returns {Promise<void>}
      */
-    public async reply(options: string | object): Promise<void> {
-        const payload = typeof options === 'string' ? { content: options } : options;
+    public async reply(options: string | { content?: string; embeds?: any[]; ephemeral?: boolean }): Promise<void> {
+        let payload: any;
+        let flags = 0;
+
+        if (typeof options === 'string') {
+            payload = { content: options };
+        } else {
+            payload = options;
+            if (options.ephemeral) {
+                flags |= MessageFlags.EPHEMERAL;
+            }
+        }
 
         await this.client.rest.request(
             'POST',
             `/interactions/${this.id}/${this.token}/callback`,
             {
                 type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
-                data: payload,
+                data: {
+                    ...payload,
+                    flags: flags,
+                },
             }
         );
     }

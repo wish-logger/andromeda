@@ -43,12 +43,12 @@ export class RestManager {
         }
 
         const url = `${this.apiBaseUrl}${path}`;
-        console.log(`Making API request: ${method} ${url}`);
 
         const response = await fetch(url, options);
 
         if (!response.ok) {
             const errorData = await response.json();
+            console.error(`API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
             throw new Error(`API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
         }
 
