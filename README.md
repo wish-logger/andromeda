@@ -44,42 +44,31 @@ Here's a basic example of how to use Andromeda to create a simple Discord bot th
 
 ```typescript
 import { Client } from './src/client/Client';
-import { ActivityType } from './src/types/Presence';
-import * as dotenv from 'dotenv';
-dotenv.config();
 
 const client = new Client();
 
+const token = ""
+
 client.on('ready', async () => {
     console.log(`Logged in as ${client.user.username}!`);
-    console.log('Setting presence...');
 
     client.setPresence({
         activities: [{
             name: 'Andromeda 1.0',
-            type: ActivityType.CUSTOM,
-            state: 'Developing a wrapper',
+            type: 4,
         }],
         status: 'online',
         since: null,
         afk: false,
     });
 
-    console.log('Presence set!');
-
     // Load your modules
     try {
-        await client.modules.loadModule('PingModule', './tests/commands/ping.ts');
+        await client.modules.loadModule('Ping', './tests/commands/ping.ts');
     } catch (error) {
-        console.error('Failed to load PingModule:', error);
+        console.error('Failed to load Ping', error);
     }
 });
-
-const token = process.env.DISCORD_TOKEN;
-
-if (!token) {
-    throw new Error('DISCORD_TOKEN not found in .env file');
-}
 
 client.login(token);
 ```
@@ -90,13 +79,13 @@ client.login(token);
 import { Module } from '../../src/structures/Module';
 import { Client } from '../../src/client/Client';
 
-export default class PingModule extends Module {
+export default class Ping extends Module {
     constructor(client: Client) {
         super(client);
 
         this.addSlashCommand({
             name: 'ping',
-            description: 'Replies with Pong!',
+            description: 'Pong?',
             execute: async (interaction) => {
                 await interaction.reply({ content: 'Pong!', ephemeral: true });
             },

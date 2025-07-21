@@ -6,7 +6,6 @@ const token = "MTM5NjkwNzEwNzQ4NzMxODEzNg.GE5ict.mFIkNgHtZxQIFQZnyfiNeIGXwIzjtFA
 
 client.on('ready', async () => {
     console.log(`Logged in as ${client.user.username}!`);
-    console.log('Setting presence...');
 
     client.setPresence({
         activities: [{
@@ -14,7 +13,6 @@ client.on('ready', async () => {
             type: 4,
         }],
         status: 'online',
-        since: null,
         afk: false,
     });
 
