@@ -1,0 +1,17 @@
+{
+  "name": "andromeda",
+  "version": "1.0.0",
+  "description": "Fast, Async, TypeScript, Discord API warpper for Wish Logger",
+  "license": "GNU General Public License v3.0",
+  "author": "Wish Logger",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@types/ws": "^8.18.1",
+    "dotenv": "^17.2.0",
+    "ws": "^8.18.3"
+  }
+}
