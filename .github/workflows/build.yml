@@ -20,7 +20,7 @@ jobs:
           node-version: 18
       - run: npm ci
       - run: npm run build
-      - run: npm test # odkomentuj jeśli masz testy
+      - run: npm test
 
   issue-echo:
     if: github.event_name == 'issues'
