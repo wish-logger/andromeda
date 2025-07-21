@@ -1,46 +1,10 @@
 # Andromeda
 
-Andromeda is a fast, asynchronous, and type-safe Discord API wrapper built with TypeScript, designed for Wish Logger.
+Andromeda - fast, asynchronous, and type-safe Discord API wrapper built with TypeScript, designed for [Wish Logger](https://wishlogger.xyz/).
 
-## Features (1.0)
+Andromeda is not built for any other Discord bots out there. Its purpose is to be a fast, type-safe, and memory-efficient wrapper. Since I just started developing it, it will take some time to add every feature that Wish needs to function.
 
-*   **Client:** A robust client for interacting with the Discord API.
-*   **Gateway Management:** Efficient WebSocket connection handling with Discord's Gateway, including heartbeat and event dispatching.
-*   **REST API:** Dedicated manager for making HTTP requests to the Discord API.
-*   **Presence Management:** Easily set your bot's online status and activities, including custom statuses.
-*   **Interaction Handling:** Comprehensive support for Discord Interactions, including:
-    *   Slash Commands (`/`)
-    *   Ephemeral replies (messages visible only to the invoker)
-*   **Modular Structure (Modules):** Organize your bot's commands, event listeners, and other functionalities into reusable modules, inspired by `discord.py`'s cogs.
-    *   `Module` base class for easy extension.
-    *   `ModuleManager` for dynamic loading and unloading of modules.
-*   **Type-Safe:** Built with TypeScript for a better development experience and fewer runtime errors.
-
-## Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/wishlogger/andromeda.git
-    cd andromeda
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Create a `.env` file:**
-    In the root directory of your project, create a file named `.env` and add your Discord bot token:
-    ```
-    DISCORD_TOKEN=YOUR_BOT_TOKEN_HERE
-    ```
-    Replace `YOUR_BOT_TOKEN_HERE` with your actual bot token.
-
-## Usage
-
-Here's a basic example of how to use Andromeda to create a simple Discord bot that logs in, sets a custom status, and responds to a `/ping` slash command.
-
-**`tests/index.ts` (Your main bot file):**
+## Simple index.ts
 
 ```typescript
 import { Client } from './src/client/Client';
@@ -73,7 +37,7 @@ client.on('ready', async () => {
 client.login(token);
 ```
 
-**`tests/commands/ping.ts` (An example module with a slash command):**
+## Simple ping.ts command
 
 ```typescript
 import { Module } from '../../src/structures/Module';
@@ -93,13 +57,3 @@ export default class Ping extends Module {
     }
 }
 ```
-
-### Running Your Bot
-
-To run your bot, use `ts-node`:
-
-```bash
-npx ts-node tests/index.ts
-```
-
-This will compile and run your TypeScript code.
