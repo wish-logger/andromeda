@@ -2,9 +2,6 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
 | Version | Supported          |
 | ------- | ------------------ |
 | 1.x     | :white_check_mark: |
@@ -16,9 +13,7 @@ We value the security of our project and encourage responsible disclosure of any
 
 ### How to Report a Vulnerability
 
-Please report security vulnerabilities by sending an message to:
-
-`thximpulse` on discord
+Please report security vulnerabilities by sending an message to `thximpulse` on discord
 
 Please include the following information:
 
