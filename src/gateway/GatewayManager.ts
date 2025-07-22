@@ -1,6 +1,12 @@
 import { Client } from '../client/Client';
 import WebSocket from 'ws';
 import { User } from '../structures/User';
+import { $heartbeat } from './structures/.heartbeat';
+import { $identify } from './structures/.identify';
+import { $updatePresence } from './structures/.Presence';
+import { $resume } from './structures/.resume';
+import { GatewayOpcodes } from '../types/Gateway';
+import { EventManager } from './EventManager';
 
 /**
  * Manages the WebSocket connection to the Discord Gateway.
@@ -36,6 +42,13 @@ export class GatewayManager {
      * @type {number | null}
      */
     private lastSequence: number | null = null;
+    /**
+     * The session ID for resuming connections.
+     * @private
+     * @type {string | null}
+     */
+    private sessionId: string | null = null;
+    private eventManager: EventManager;
 
     /**
      * Creates a new GatewayManager instance.
@@ -43,6 +56,7 @@ export class GatewayManager {
      */
     constructor(client: Client) {
         this.client = client;
+        this.eventManager = new EventManager(client);
     }
 
     /**
@@ -60,6 +74,14 @@ export class GatewayManager {
         }
 
         this.ws = new WebSocket(this.gatewayURL);
+
+        this.ws.on('open', () => {
+            if (this.sessionId && this.lastSequence !== null) {
+                this.resume();
+            } else {
+                this.identify();
+            }
+        });
 
         this.ws.on('message', (data) => {
             const payload = JSON.parse(data.toString());
@@ -79,9 +101,6 @@ export class GatewayManager {
         });
     }
 
-    private _toCamelCase(str: string): string {
-        return str.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-    }
 
     /**
      * Handles incoming payloads from the Discord Gateway.
@@ -97,18 +116,24 @@ export class GatewayManager {
         }
 
         switch (op) {
-            case 10: // Hello
+            case GatewayOpcodes.Hello:
                 this.startHeartbeat(d.heartbeat_interval);
-                this.identify();
                 break;
-            case 11: // Heartbeat ACK
+            case GatewayOpcodes.HeartbeatACK:
                 break;
-            case 0: // Dispatch
-                const eventName = this._toCamelCase(t);
-                if (eventName === 'ready') {
-                    this.client.user = new User(this.client, d.user);
+            case GatewayOpcodes.Dispatch:
+                this.eventManager.handle(payload);
+                if (t === 'READY') {
+                    this.sessionId = d.session_id;
                 }
-                this.client.emit(eventName, d);
+                break;
+            case GatewayOpcodes.InvalidSession:
+                console.warn(`Invalid Session. Attempting to ${d ? 're-identify' : 'reconnect'}.`);
+                this.sessionId = null;
+                this.connect();
+                break;
+            case GatewayOpcodes.Reconnect:
+                this.ws?.close();
                 break;
             default:
                 console.warn('Received unhandled opcode:', op);
@@ -122,6 +147,9 @@ export class GatewayManager {
      * @returns {void}
      */
     private startHeartbeat(interval: number): void {
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+        }
         this.heartbeatInterval = setInterval(() => {
             this.sendHeartbeat();
         }, interval);
@@ -134,7 +162,7 @@ export class GatewayManager {
      */
     private sendHeartbeat(): void {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({ op: 1, d: this.lastSequence }));
+            this.ws.send($heartbeat(this.lastSequence));
         }
     }
 
@@ -142,25 +170,34 @@ export class GatewayManager {
      * Sends the IDENTIFY payload to the Discord Gateway.
      * @private
      * @returns {void}
-     * @throws {Error} If the WebSocket is not initialized.
+     * @throws {Error} If the WebSocket is not initialized or no token provided.
      */
-        private identify(): void {
+    private identify(): void {
         if (!this.ws) {
             throw new Error("WebSocket is not initialized.");
         }
-        const payload = {
-            op: 2,
-            d: {
-                token: this.client.token,
-                intents: this.client.intents,
-                properties: {
-                    $os: 'win32',
-                    $browser: 'andromeda',
-                    $device: 'andromeda'
-                }
-            }
-        };
-        this.ws.send(JSON.stringify(payload));
+        if (!this.client.token) {
+            throw new Error('No token provided for identify.');
+        }
+        this.ws.send($identify(this.client.token, [this.client.clusterId, this.client.totalClusters], this.client.intents));
+    }
+
+    /**
+     * Sends the RESUME payload to the Discord Gateway.
+     * @private
+     * @returns {void}
+     * @throws {Error} If WebSocket is not initialized, no token, session ID, or sequence.
+     */
+    private resume(): void {
+        if (!this.ws) {
+            throw new Error("WebSocket is not initialized.");
+        }
+        if (!this.client.token || !this.sessionId || this.lastSequence === null) {
+            console.warn('Cannot resume: missing token, session ID, or last sequence. Identifying instead.');
+            this.identify();
+            return;
+        }
+        this.ws.send($resume(this.client.token, this.sessionId, this.lastSequence));
     }
 
     /**
@@ -173,6 +210,10 @@ export class GatewayManager {
             console.warn('WebSocket is not connected. Cannot update presence.');
             return;
         }
-        this.ws.send(JSON.stringify({ op: 3, d: data }));
+        const { activities, status, afk, since } = data;
+        const activityName = activities && activities.length > 0 ? activities[0].name : '';
+        const activityType = activities && activities.length > 0 ? activities[0].type : 0;
+
+        this.ws.send($updatePresence(activityName, activityType, status, afk, since));
     }
 }

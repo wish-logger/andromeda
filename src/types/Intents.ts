@@ -27,5 +27,7 @@ export enum GatewayIntentBits {
  * Type for client options when creating a new Client instance.
  */
 export interface ClientOptions {
-    intents?: GatewayIntentBits[];
+    intents?: number | GatewayIntentBits[];
+    clusterId?: number; // (0-indexed)
+    totalClusters?: number;
 } 

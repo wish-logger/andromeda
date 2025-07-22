@@ -5,20 +5,7 @@ export interface PresenceData {
     /**
      * An array of activities the user is currently doing.
      */
-    activities: {
-        /**
-         * The name of the activity.
-         */
-        name: string;
-        /**
-         * The type of the activity (e.g., 0 for Playing, 1 for Streaming, 4 for Custom Status).
-         */
-        type: ActivityType;
-        /**
-         * The state of the activity (e.g., for Custom Status).
-         */
-        state?: string;
-    }[];
+    activities: ActivityObject[];
     /**
      * The user's new status.
      * Can be 'online', 'dnd' (Do Not Disturb), 'idle', 'invisible', or 'offline'.
@@ -35,6 +22,26 @@ export interface PresenceData {
 }
 
 /**
+ * Represents an activity object within a presence update.
+ */
+export interface ActivityObject {
+    name: string;
+    type: ActivityType;
+    url?: string | null;
+    created_at?: number;
+    timestamps?: { start?: number; end?: number };
+    application_id?: string;
+    details?: string | null;
+    state?: string | null;
+    emoji?: { name: string; id?: string; animated?: boolean } | null;
+    party?: { id?: string; size?: [number, number] };
+    assets?: { large_image?: string; large_text?: string; small_image?: string; small_text?: string };
+    secrets?: { join?: string; match?: string; spectate?: string };
+    instance?: boolean;
+    flags?: number;
+}
+
+/**
  * Enum for activity types.
  */
 export enum ActivityType {
@@ -44,4 +51,15 @@ export enum ActivityType {
     WATCHING = 3,
     CUSTOM = 4,
     COMPETING = 5,
+}
+
+/**
+ * Enum for presence update status.
+ */
+export enum PresenceUpdateStatus {
+    Online = 'online',
+    DoNotDisturb = 'dnd',
+    Idle = 'idle',
+    Invisible = 'invisible',
+    Offline = 'offline',
 }

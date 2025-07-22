@@ -23,6 +23,16 @@ export class Client extends EventEmitter {
      * @type {number}
      */
     public intents: number;
+    /**
+     * The ID of this cluster.
+     * @type {number}
+     */
+    public clusterId: number;
+    /**
+     * The total number of clusters.
+     * @type {number}
+     */
+    public totalClusters: number;
 
     // Static types
     public static readonly GUILDS = 1 << 0;
@@ -78,7 +88,9 @@ export class Client extends EventEmitter {
      */
     constructor(options?: ClientOptions) {
         super();
-        this.intents = this._calculateIntents(options?.intents);
+        this.intents = this.$calculateIntents(options?.intents);
+        this.clusterId = options?.clusterId ?? 0; // Default to 0
+        this.totalClusters = options?.totalClusters ?? 1; // Default to 1 (no clustering)
         this.gateway = new GatewayManager(this);
         this.rest = new RestManager(this);
         this.interactions = new InteractionManager(this);
@@ -91,11 +103,17 @@ export class Client extends EventEmitter {
      * @returns {number} The calculated intents bitfield.
      * @private
      */
-    private _calculateIntents(intentsArray?: GatewayIntentBits[]): number {
-        if (!intentsArray || intentsArray.length === 0) {
-            return 0;
+    private $calculateIntents(intentsInput?: number | GatewayIntentBits[]): number {
+        // If intentsInput is a number (bitfield), use it directly
+        if (typeof intentsInput === 'number') {
+            return intentsInput;
         }
-        return intentsArray.reduce((acc, intent) => acc | intent, 0);
+        // If intentsInput is an array of GatewayIntentBits, reduce it to a bitfield
+        if (Array.isArray(intentsInput)) {
+            return intentsInput.reduce((acc, intent) => acc | intent, 0);
+        }
+        // Fallback for cases where it might be undefined or other unexpected type
+        return 0;
     }
 
     /**
