@@ -1,7 +1,7 @@
 import { Client } from '../client/Client';
 import { User } from './User';
 import { Member } from './Member'
-import { EmbedBuilder } from './EmbedBuilder';
+import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
 
 export interface MessageAttachment {
     id: string;

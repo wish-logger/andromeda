@@ -1,7 +1,9 @@
 import { Client } from '../client/Client';
 import { Interaction as InteractionPayload, InteractionType } from '../types/Interaction';
 import { MessageFlags } from '../types/Message';
-
+import { User } from '../structures/User'
+import { Member } from '../structures/Member'
+import { Message } from '../structures/Message'
 /**
  * Represents a Discord interaction.
  */
@@ -12,11 +14,11 @@ export class Interaction {
     public data: any; // TODO: Type this properly
     public guildId?: string;
     public channelId?: string;
-    public member?: any; // TODO: Type this properly
-    public user?: any; // TODO: Type this properly
+    public member: Member;
+    public user: User;
     public token: string;
     public version: number;
-    public message?: any; // TODO: Type this properly
+    public message: Message;
 
     private client: Client;
 
@@ -63,7 +65,7 @@ export class Interaction {
             'POST',
             `/interactions/${this.id}/${this.token}/callback`,
             {
-                type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
+                type: 4,
                 data: {
                     ...payload,
                     flags: flags,
