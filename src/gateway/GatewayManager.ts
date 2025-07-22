@@ -108,6 +108,8 @@ export class GatewayManager {
                 if (eventName === 'ready') {
                     this.client.user = new User(this.client, d.user);
                 }
+                this.client.emit(eventName, d);
+                break;
             default:
                 console.warn('Received unhandled opcode:', op);
         }
