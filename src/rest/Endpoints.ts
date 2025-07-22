@@ -50,3 +50,9 @@ export const APPLICATION_COMMAND = (applicationId: string, commandId: string) =>
  * Parameters: applicationId, guildId, commandId
  */
 export const GUILD_APPLICATION_COMMAND = (applicationId: string, guildId: string, commandId: string) => `/applications/${applicationId}/guilds/${guildId}/commands/${commandId}`;
+
+/**
+ * Endpoint for bulk deleting messages in a channel.
+ * Parameters: channelId
+ */
+export const CHANNEL_BULK_DELETE = (channelId: string) => `/channels/${channelId}/messages/bulk-delete`;

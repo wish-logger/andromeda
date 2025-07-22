@@ -2,6 +2,16 @@ import { ApplicationCommandType, ApplicationCommandOptionType, ApplicationComman
 import { LocalizationMap } from '../types/Localization';
 import { PermissionFlagsBits } from '../../types/Permissions';
 import { Interaction } from '../../structures/Interaction';
+import { IntegerOptionBuilder } from './sub/IntegerOptionBuilder';
+import { UserOptionBuilder } from './sub/UserOptionBuilder';
+import { StringOptionBuilder } from './sub/StringOptionBuilder';
+import { BooleanOptionBuilder } from './sub/BooleanOptionBuilder';
+import { ChannelOptionBuilder } from './sub/ChannelOptionBuilder';
+import { RoleOptionBuilder } from './sub/RoleOptionBuilder';
+import { MentionableOptionBuilder } from './sub/MentionableOptionBuilder';
+import { NumberOptionBuilder } from './sub/NumberOptionBuilder';
+import { SubcommandBuilder } from './sub/SubcommandBuilder';
+import { SubcommandGroupBuilder } from './sub/SubcommandGroupBuilder';
 
 /**
  * Represents a builder for a Discord Slash Command.
@@ -117,195 +127,118 @@ export class SlashCommandBuilder {
 
     /**
      * Adds a string option to the slash command.
-     * @param {object} option The option to add.
-     * @param {string} option.name The name of the option.
-     * @param {string} option.description The description of the option.
-     * @param {boolean} [option.required] Whether the option is required. Defaults to `false`.
-     * @param {ApplicationCommandOptionChoice[]} [option.choices] A list of choices for the option.
+     * @param {(option: StringOptionBuilder) => StringOptionBuilder} input A function that receives a StringOptionBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addStringOption(option: { name: string; description: string; required?: boolean; choices?: ApplicationCommandOptionChoice[] }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.STRING,
-            name: option.name,
-            description: option.description,
-            required: option.required,
-            choices: option.choices,
-        });
+    public addStringOption(input: (option: StringOptionBuilder) => StringOptionBuilder): this {
+        const optionBuilder = new StringOptionBuilder();
+        this._options.push(input(optionBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds an integer option to the slash command.
-     * @param {object} option The option to add.
-     * @param {string} option.name The name of the option.
-     * @param {string} option.description The description of the option.
-     * @param {boolean} [option.required] Whether the option is required. Defaults to `false`.
-     * @param {ApplicationCommandOptionChoice[]} [option.choices] A list of choices for the option.
+     * @param {(option: IntegerOptionBuilder) => IntegerOptionBuilder} input A function that receives an IntegerOptionBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addIntegerOption(option: { name: string; description: string; required?: boolean; choices?: ApplicationCommandOptionChoice[] }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.INTEGER,
-            name: option.name,
-            description: option.description,
-            required: option.required,
-            choices: option.choices,
-        });
+    public addIntegerOption(input: (option: IntegerOptionBuilder) => IntegerOptionBuilder): this {
+        const optionBuilder = new IntegerOptionBuilder();
+        this._options.push(input(optionBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds a boolean option to the slash command.
-     * @param {object} option The option to add.
-     * @param {string} option.name The name of the option.
-     * @param {string} option.description The description of the option.
-     * @param {boolean} [option.required] Whether the option is required. Defaults to `false`.
+     * @param {(option: BooleanOptionBuilder) => BooleanOptionBuilder} input A function that receives a BooleanOptionBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addBooleanOption(option: { name: string; description: string; required?: boolean }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.BOOLEAN,
-            name: option.name,
-            description: option.description,
-            required: option.required,
-        });
+    public addBooleanOption(input: (option: BooleanOptionBuilder) => BooleanOptionBuilder): this {
+        const optionBuilder = new BooleanOptionBuilder();
+        this._options.push(input(optionBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds a user option to the slash command.
-     * @param {object} option The option to add.
-     * @param {string} option.name The name of the option.
-     * @param {string} option.description The description of the option.
-     * @param {boolean} [option.required] Whether the option is required. Defaults to `false`.
+     * @param {(option: UserOptionBuilder) => UserOptionBuilder} input A function that receives a UserOptionBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addUserOption(option: { name: string; description: string; required?: boolean }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.USER,
-            name: option.name,
-            description: option.description,
-            required: option.required,
-        });
+    public addUserOption(input: (option: UserOptionBuilder) => UserOptionBuilder): this {
+        const optionBuilder = new UserOptionBuilder();
+        this._options.push(input(optionBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds a channel option to the slash command.
-     * @param {object} option The option to add.
-     * @param {string} option.name The name of the option.
-     * @param {string} option.description The description of the option.
-     * @param {boolean} [option.required] Whether the option is required. Defaults to `false`.
+     * @param {(option: ChannelOptionBuilder) => ChannelOptionBuilder} input A function that receives a ChannelOptionBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addChannelOption(option: { name: string; description: string; required?: boolean }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.CHANNEL,
-            name: option.name,
-            description: option.description,
-            required: option.required,
-        });
+    public addChannelOption(input: (option: ChannelOptionBuilder) => ChannelOptionBuilder): this {
+        const optionBuilder = new ChannelOptionBuilder();
+        this._options.push(input(optionBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds a role option to the slash command.
-     * @param {object} option The option to add.
-     * @param {string} option.name The name of the option.
-     * @param {string} option.description The description of the option.
-     * @param {boolean} [option.required] Whether the option is required. Defaults to `false`.
+     * @param {(option: RoleOptionBuilder) => RoleOptionBuilder} input A function that receives a RoleOptionBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addRoleOption(option: { name: string; description: string; required?: boolean }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.ROLE,
-            name: option.name,
-            description: option.description,
-            required: option.required,
-        });
+    public addRoleOption(input: (option: RoleOptionBuilder) => RoleOptionBuilder): this {
+        const optionBuilder = new RoleOptionBuilder();
+        this._options.push(input(optionBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds a mentionable option to the slash command.
-     * @param {object} option The option to add.
-     * @param {string} option.name The name of the option.
-     * @param {string} option.description The description of the option.
-     * @param {boolean} [option.required] Whether the option is required. Defaults to `false`.
+     * @param {(option: MentionableOptionBuilder) => MentionableOptionBuilder} input A function that receives a MentionableOptionBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addMentionableOption(option: { name: string; description: string; required?: boolean }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.MENTIONABLE,
-            name: option.name,
-            description: option.description,
-            required: option.required,
-        });
+    public addMentionableOption(input: (option: MentionableOptionBuilder) => MentionableOptionBuilder): this {
+        const optionBuilder = new MentionableOptionBuilder();
+        this._options.push(input(optionBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds a number (float) option to the slash command.
-     * @param {object} option The option to add.
-     * @param {string} option.name The name of the option.
-     * @param {string} option.description The description of the option.
-     * @param {boolean} [option.required] Whether the option is required. Defaults to `false`.
-     * @param {ApplicationCommandOptionChoice[]} [option.choices] A list of choices for the option.
+     * @param {(option: NumberOptionBuilder) => NumberOptionBuilder} input A function that receives a NumberOptionBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addNumberOption(option: { name: string; description: string; required?: boolean; choices?: ApplicationCommandOptionChoice[] }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.NUMBER,
-            name: option.name,
-            description: option.description,
-            required: option.required,
-            choices: option.choices,
-        });
+    public addNumberOption(input: (option: NumberOptionBuilder) => NumberOptionBuilder): this {
+        const optionBuilder = new NumberOptionBuilder();
+        this._options.push(input(optionBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds a subcommand to the slash command.
-     * Subcommands can have their own options.
-     * @param {object} option The subcommand to add.
-     * @param {string} option.name The name of the subcommand.
-     * @param {string} option.description The description of the subcommand.
-     * @param {ApplicationCommandOption[]} [option.options] Nested options for this subcommand.
+     * @param {(subcommand: SubcommandBuilder) => SubcommandBuilder} input A function that receives a SubcommandBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addSubcommand(option: { name: string; description: string; options?: ApplicationCommandOption[] }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.SUB_COMMAND,
-            name: option.name,
-            description: option.description,
-            options: option.options,
-        });
+    public addSubcommand(input: (subcommand: SubcommandBuilder) => SubcommandBuilder): this {
+        const subcommandBuilder = new SubcommandBuilder();
+        this._options.push(input(subcommandBuilder).toJSON());
         return this;
     }
 
     /**
      * Adds a subcommand group to the slash command.
-     * Subcommand groups can contain subcommands, which can then have their own options.
-     * @param {object} option The subcommand group to add.
-     * @param {string} option.name The name of the subcommand group.
-     * @param {string} option.description The description of the subcommand group.
-     * @param {ApplicationCommandOption[]} [option.options] Subcommands within this group.
+     * @param {(group: SubcommandGroupBuilder) => SubcommandGroupBuilder} input A function that receives a SubcommandGroupBuilder.
      * @returns {this} The SlashCommandBuilder instance.
      */
-    public addSubcommandGroup(option: { name: string; description: string; options?: ApplicationCommandOption[] }): this {
-        this._options.push({
-            type: ApplicationCommandOptionType.SUB_COMMAND_GROUP,
-            name: option.name,
-            description: option.description,
-            options: option.options,
-        });
+    public addSubcommandGroup(input: (group: SubcommandGroupBuilder) => SubcommandGroupBuilder): this {
+        const groupBuilder = new SubcommandGroupBuilder();
+        this._options.push(input(groupBuilder).toJSON());
         return this;
     }
 
     /**
      * Converts the builder to a JSON object suitable for the Discord API.
      * @returns {ApplicationCommandData} The command data in JSON format.
+     * @throws {Error} If name or description are not set.
      */
     public toJSON(): ApplicationCommandData {
         if (typeof this._name === 'undefined' || typeof this._description === 'undefined') {

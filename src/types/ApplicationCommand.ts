@@ -1,4 +1,5 @@
 import { LocalizationMap } from '../Builders/types/Localization';
+import { ChannelType } from '../structures/Channel';
 
 /**
  * Represents an application command (slash command) data for registration.
@@ -42,6 +43,9 @@ export interface ApplicationCommandOption {
     required?: boolean;
     choices?: ApplicationCommandOptionChoice[];
     options?: ApplicationCommandOption[];
+    channel_types?: ChannelType[];
+    min_value?: number;
+    max_value?: number;
 }
 
 /**

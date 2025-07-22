@@ -107,6 +107,18 @@ export class User {
     public avatarDecoration: string | null;
 
     /**
+     *  User's collectibles
+     * @type {object | null}
+     */
+    public collectibles: object | null;
+
+    /**
+     *  User's primary guild
+     * @type {object | null}
+     */
+    public primaryGuild: object | null;
+
+    /**
      * Creates a new User instance.
      * @param {Client} client The client instance.
      * @param {any} data The raw user data from Discord.
@@ -129,6 +141,8 @@ export class User {
         this.premiumType = data.premium_type ?? null;
         this.publicFlags = data.public_flags ?? null;
         this.avatarDecoration = data.avatar_decoration ?? null;
+        this.collectibles = data.collectibles ?? null
+        this.primaryGuild = data.primary_guild ?? null
     }
 
     /**

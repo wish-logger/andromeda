@@ -4,8 +4,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('ping')
         .setDescription('Pong?')
-        .setDMPermission(true)
-        .toJSON(),
+        .setDMPermission(true),
     
     async execute(interaction: Interaction) {
         await interaction.reply({ content: 'Pong!', ephemeral: true });

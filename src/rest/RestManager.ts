@@ -24,7 +24,7 @@ export class RestManager {
      * @returns {Promise<any>} The JSON response from the API.
      * @throws {Error} If the request fails or returns an error.
      */
-    public async request(method: string, path: string, body?: any): Promise<any> {
+    public async request(method: string, path: string, body?: any, customHeaders?: HeadersInit): Promise<any> {
         if (!this.client.token) {
             throw new Error('No token provided for REST request.');
         }
@@ -32,6 +32,7 @@ export class RestManager {
         const headers: HeadersInit = {
             'Authorization': `Bot ${this.client.token}`,
             'Content-Type': 'application/json',
+            ...customHeaders,
         };
 
         const options: RequestInit = {
