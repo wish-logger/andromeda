@@ -1,11 +1,12 @@
 import { Client } from '../client/Client';
+import { API_BASE_URL } from './Endpoints';
 
 /**
  * Manages HTTP requests to the Discord API.
  */
 export class RestManager {
     private client: Client;
-    private readonly apiBaseUrl = 'https://discord.com/api/v10';
+    private readonly apiBaseUrl = API_BASE_URL;
 
     /**
      * Creates a new RestManager instance.
