@@ -144,7 +144,7 @@ export class GatewayManager {
      * @returns {void}
      * @throws {Error} If the WebSocket is not initialized.
      */
-    private identify(): void {
+        private identify(): void {
         if (!this.ws) {
             throw new Error("WebSocket is not initialized.");
         }
@@ -152,7 +152,7 @@ export class GatewayManager {
             op: 2,
             d: {
                 token: this.client.token,
-                intents: 513, // GUILDS and GUILD_MESSAGES
+                intents: this.client.intents,
                 properties: {
                     $os: 'win32',
                     $browser: 'andromeda',

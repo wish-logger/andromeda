@@ -1,5 +1,6 @@
 import { GatewayManager } from '../../..//src/gateway/GatewayManager';
 import { Client } from '../../../src/client/Client';
+import { GatewayIntentBits } from '../../../src/types/Intents';
 import WebSocket from 'ws';
 
 jest.mock('ws');
@@ -15,7 +16,7 @@ describe('GatewayManager', () => {
 
     MockedWebSocket.mockClear();
 
-    client = new Client();
+    client = new Client({ intents: [GatewayIntentBits.GUILDS, GatewayIntentBits.GUILD_MESSAGES] });
     client.token = 'mock_token';
     gatewayManager = new GatewayManager(client);
 
@@ -66,7 +67,7 @@ describe('GatewayManager', () => {
       op: 2,
       d: {
         token: 'mock_token',
-        intents: 513,
+        intents: client.intents,
         properties: {
           $os: 'win32',
           $browser: 'andromeda',

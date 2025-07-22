@@ -6,6 +6,7 @@ import { RestManager } from '../rest/RestManager';
 import { InteractionManager } from '../managers/InteractionManager';
 import { ApplicationCommand, ApplicationCommandData } from '../types/ApplicationCommand';
 import { ModuleManager } from '../managers/ModuleManager';
+import { ClientOptions, GatewayIntentBits } from '../types/Intents';
 
 /**
  * The main client for interacting with the Discord API.
@@ -17,6 +18,33 @@ export class Client extends EventEmitter {
      * @type {string | null}
      */
     public token: string | null = null;
+    /**
+     * The intents bitfield for the client.
+     * @type {number}
+     */
+    public intents: number;
+
+    // Static types
+    public static readonly GUILDS = 1 << 0;
+    public static readonly GUILD_MEMBERS = 1 << 1;
+    public static readonly GUILD_BANS = 1 << 2;
+    public static readonly GUILD_EMOJIS_AND_STICKERS = 1 << 3;
+    public static readonly GUILD_INTEGRATIONS = 1 << 4;
+    public static readonly GUILD_WEBHOOKS = 1 << 5;
+    public static readonly GUILD_INVITES = 1 << 6;
+    public static readonly GUILD_VOICE_STATES = 1 << 7;
+    public static readonly GUILD_PRESENCES = 1 << 8;
+    public static readonly GUILD_MESSAGES = 1 << 9;
+    public static readonly GUILD_MESSAGE_REACTIONS = 1 << 10;
+    public static readonly GUILD_MESSAGE_TYPING = 1 << 11;
+    public static readonly DIRECT_MESSAGES = 1 << 12;
+    public static readonly DIRECT_MESSAGE_REACTIONS = 1 << 13;
+    public static readonly DIRECT_MESSAGE_TYPING = 1 << 14;
+    public static readonly MESSAGE_CONTENT = 1 << 15;
+    public static readonly GUILD_SCHEDULED_EVENTS = 1 << 16;
+    public static readonly AUTO_MODERATION_CONFIGURATION = 1 << 20;
+    public static readonly AUTO_MODERATION_EXECUTION = 1 << 21;
+
     /**
      * Manages the WebSocket connection to the Discord Gateway.
      * @type {GatewayManager}
@@ -46,13 +74,28 @@ export class Client extends EventEmitter {
 
     /**
      * Creates a new instance of the Discord client.
+     * @param {ClientOptions} [options] Options for the client.
      */
-    constructor() {
+    constructor(options?: ClientOptions) {
         super();
+        this.intents = this._calculateIntents(options?.intents);
         this.gateway = new GatewayManager(this);
         this.rest = new RestManager(this);
         this.interactions = new InteractionManager(this);
         this.modules = new ModuleManager(this);
+    }
+
+    /**
+     * Calculates the intents bitfield from an array of intent bits.
+     * @param {GatewayIntentBits[]} intentsArray An array of GatewayIntentBits.
+     * @returns {number} The calculated intents bitfield.
+     * @private
+     */
+    private _calculateIntents(intentsArray?: GatewayIntentBits[]): number {
+        if (!intentsArray || intentsArray.length === 0) {
+            return 0;
+        }
+        return intentsArray.reduce((acc, intent) => acc | intent, 0);
     }
 
     /**
@@ -73,6 +116,13 @@ export class Client extends EventEmitter {
     public setPresence(data: Partial<PresenceData>): void {
         // Deep copy to avoid modifying the original object
         const presenceData = JSON.parse(JSON.stringify(data));
+
+        // if the afk prop is undefined set it to null in post
+        if (typeof presenceData.since === 'undefined') {
+            if (presenceData.afk === false || typeof presenceData.afk === 'undefined') {
+                presenceData.since = null;
+            }
+        }
 
         if (presenceData.activities && Array.isArray(presenceData.activities)) {
             presenceData.activities = presenceData.activities.map((activity: any) => {
