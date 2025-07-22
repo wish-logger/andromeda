@@ -34,4 +34,19 @@ export enum MessageFlags {
      * This message is a reply to a message that was deleted.
      */
     FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = 1 << 8,
+
+    /**
+     * This message will not trigger push notifications.
+     */
+    SUPPRESS_NOTIFICATIONS = 1 << 12,
+    
+    /**
+     * This message is a voice message.
+     */
+    IS_VOICE_MESSAGE = 1 << 13,
+
+    /**
+     * This message contains Components V2.
+     */
+    IS_COMPONENTS_V2 = 1 << 14,
 }

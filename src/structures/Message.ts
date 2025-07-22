@@ -3,6 +3,8 @@ import { User } from './User';
 import { Member } from './Member';
 import { CHANNEL_MESSAGES } from '../rest/Endpoints';
 import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
+import { Poll, PollAnswer, PollMedia, PollResults, PollAnswerCount, PollLayoutType } from '../types/Poll';
+import { ComponentV2Type, ComponentV2Union, ContainerComponent, SectionComponent, TextDisplayComponent, MediaGalleryComponent, SeparatorComponent, ActionRowComponent, ButtonComponent, StringSelectComponent } from '../types/ComponentV2'; // Import V2 types
 
 export interface MessageAttachment {
     id: string;
@@ -198,6 +200,7 @@ export enum MessageFlags {
     FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = 1 << 8,
     SUPPRESS_NOTIFICATIONS = 1 << 12,
     IS_VOICE_MESSAGE = 1 << 13,
+    IS_COMPONENTS_V2 = 1 << 14,
 }
 
 /**
@@ -409,6 +412,18 @@ export class Message {
     public roleSubscriptionData: any | null;
 
     /**
+     * Poll data, if the message is a poll.
+     * @type {Poll | null}
+     */
+    public poll: Poll | null;
+
+    /**
+     * Components V2 data, if the message uses the new component system.
+     * @type {ComponentV2Union[] | null}
+     */
+    public componentsV2: ComponentV2Union[] | null;
+
+    /**
      * Creates a new Message instance.
      * @param {Client} client The client instance.
      * @param {any} data The raw message data from Discord.
@@ -447,6 +462,25 @@ export class Message {
         this.stickers = data.stickers ?? [];
         this.position = data.position ?? null;
         this.roleSubscriptionData = data.role_subscription_data ?? null;
+        
+        if (data.poll) {
+            this.poll = {
+                id: data.poll.id,
+                question: data.poll.question as PollMedia,
+                answers: data.poll.answers.map((answer: any) => ({ answer_id: answer.answer_id, poll_media: answer.poll_media as PollMedia })) as PollAnswer[],
+                results: {
+                    is_finalized: data.poll.results.is_finalized,
+                    answer_counts: data.poll.results.answer_counts.map((count: any) => ({ id: count.id, count: count.count, me_voted: count.me_voted })) as PollAnswerCount[],
+                } as PollResults,
+                expiry: data.poll.expiry,
+                allow_multiselect: data.poll.allow_multiselect,
+                layout_type: data.poll.layout_type as PollLayoutType,
+            };
+        } else {
+            this.poll = null;
+        }
+
+        this.componentsV2 = data.components_v2 ? this._parseComponentV2(data.components_v2) : null;
 
         this.channel = {
             send: async (content: string | { embeds: EmbedBuilder[] }) => {
@@ -463,6 +497,72 @@ export class Message {
                 return this.client.rest.request('POST', `/channels/${this.channelId}/messages`, payload);
             }
         };
+    }
+
+    /**
+     * Helper to recursively parse raw Discord Components V2 data into our structured types.
+     * @param rawComponents The raw components array from Discord.
+     * @returns An array of parsed ComponentV2Union objects.
+     */
+    private _parseComponentV2(rawComponents: any[]): ComponentV2Union[] {
+        return rawComponents.map(rawComp => {
+            switch (rawComp.type) {
+                case ComponentV2Type.CONTAINER:
+                    return {
+                        type: rawComp.type,
+                        unique_id: rawComp.unique_id,
+                        accent_color: rawComp.accent_color,
+                        spoiler: rawComp.spoiler,
+                        components: this._parseComponentV2(rawComp.components || []),
+                    } as ContainerComponent;
+                case ComponentV2Type.SECTION:
+                    return {
+                        type: rawComp.type,
+                        components: this._parseComponentV2(rawComp.components || []),
+                        accessory: rawComp.accessory,
+                    } as SectionComponent;
+                case ComponentV2Type.TEXT_DISPLAY:
+                    return {
+                        type: rawComp.type,
+                        content: rawComp.content,
+                    } as TextDisplayComponent;
+                case ComponentV2Type.MEDIA_GALLERY:
+                    return {
+                        type: rawComp.type,
+                        items: rawComp.items,
+                    } as MediaGalleryComponent;
+                case ComponentV2Type.SEPARATOR:
+                    return { type: rawComp.type } as SeparatorComponent;
+                case ComponentV2Type.ACTION_ROW:
+                    return {
+                        type: rawComp.type,
+                        components: rawComp.components.map((c: any) => this._parseComponentV2(c)[0]),
+                    } as ActionRowComponent;
+                case ComponentV2Type.BUTTON:
+                    return {
+                        type: rawComp.type,
+                        style: rawComp.style,
+                        label: rawComp.label,
+                        emoji: rawComp.emoji,
+                        custom_id: rawComp.custom_id,
+                        url: rawComp.url,
+                        disabled: rawComp.disabled,
+                    } as ButtonComponent;
+                case ComponentV2Type.STRING_SELECT:
+                    return {
+                        type: rawComp.type,
+                        custom_id: rawComp.custom_id,
+                        options: rawComp.options,
+                        placeholder: rawComp.placeholder,
+                        min_values: rawComp.min_values,
+                        max_values: rawComp.max_values,
+                        disabled: rawComp.disabled,
+                    } as StringSelectComponent;
+                default:
+                    console.warn(`Unknown Component V2 type encountered: ${rawComp.type}`);
+                    return rawComp; // Return raw if type is unknown
+            }
+        });
     }
 
     /**

@@ -9,6 +9,15 @@ import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
 import { Channel, ChannelType } from '../structures/Channel';
 import { ApplicationCommandOptionType } from '../types/ApplicationCommand';
 import { Role } from '../structures/Role';
+import { ComponentV2Union, ContainerComponent, SectionComponent, TextDisplayComponent, MediaGalleryComponent, SeparatorComponent, ActionRowComponent } from '../types/ComponentV2'; // Import V2 types
+
+// v2
+import { ContainerBuilder } from '../Builders/structures/v2/ContainerBuilder';
+import { SectionBuilder } from '../Builders/structures/v2/SectionBuilder';
+import { TextDisplayBuilder } from '../Builders/structures/v2/TextDisplayBuilder';
+import { MediaGalleryBuilder } from '../Builders/structures/v2/MediaGalleryBuilder';
+import { SeparatorBuilder } from '../Builders/structures/v2/SeparatorBuilder';
+import { ActionRowBuilder } from '../Builders/structures/components/ActionRowBuilder';
 
 /**
  * A helper class to simplify accessing interaction options.
@@ -65,8 +74,6 @@ class InteractionOptions {
                 return this.getUser(name) || this.getRole(name) || option.value as string;
             case ApplicationCommandOptionType.SUB_COMMAND:
             case ApplicationCommandOptionType.SUB_COMMAND_GROUP:
-                // For subcommands and subcommand groups, return the whole option object
-                // as they contain nested options.
                 return option;
             default:
                 return option.value; // Fallback for any other types or if value is already suitable
@@ -126,11 +133,9 @@ class InteractionOptions {
 
         const memberId = option.value as string;
         const memberData = this.resolved.members[memberId];
-        const userData = this.resolved.users[memberId]; // Need the full user object for Member constructor
+        const userData = this.resolved.users[memberId];
 
         if (memberData && userData) {
-            // Create a full member object by merging resolved member data with the resolved user object
-            // and providing the client and guildId
             const fullMemberData = { ...memberData, user: userData };
             return new Member(this.client, fullMemberData, this.guildId);
         }
@@ -146,7 +151,6 @@ class InteractionOptions {
         const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.CHANNEL);
         if (!option?.value || !this.resolved?.channels) return undefined;
         const channelData = this.resolved.channels[option.value as string];
-        // Note: For now, we instantiate as Channel.
         return channelData ? new Channel(this.client, channelData) : undefined;
     }
 
@@ -159,7 +163,6 @@ class InteractionOptions {
         const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.ROLE);
         if (!option?.value || !this.resolved?.roles) return undefined;
         const roleData = this.resolved.roles[option.value as string];
-        // Note: Role constructor typically needs guildId, but resolved roles might not always have it direct.
         return roleData ? new Role(this.client, roleData, this.guildId || 'unknown') : undefined;
     }
 
@@ -276,7 +279,7 @@ export class Interaction {
      * @param {boolean} [options.ephemeral] Whether the reply should be ephemeral (only visible to the user who invoked the interaction). Defaults to `false`.
      * @returns {Promise<void>}
      */
-    public async reply(options: string | { content?: string; embeds?: any[]; ephemeral?: boolean }): Promise<void> {
+    public async reply(options: string | { content?: string; embeds?: any[]; ephemeral?: boolean; componentsV2?: (ContainerBuilder | SectionBuilder | TextDisplayBuilder | MediaGalleryBuilder | SeparatorBuilder | ActionRowBuilder)[] }): Promise<void> {
         let payload: any;
         let flags = 0;
 
@@ -286,6 +289,13 @@ export class Interaction {
             payload = options;
             if (options.ephemeral) {
                 flags |= MessageFlags.EPHEMERAL;
+            }
+
+            if (options.componentsV2 && options.componentsV2.length > 0) {
+                payload.components_v2 = options.componentsV2.map(comp => comp.toJSON());
+                flags |= MessageFlags.IS_COMPONENTS_V2;
+                // delete payload.content; // idk
+                delete payload.embeds;
             }
         }
 
