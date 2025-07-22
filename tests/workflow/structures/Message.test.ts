@@ -8,7 +8,7 @@ describe('Message', () => {
       channel_id: '0987654321',
       guild_id: '1122334455',
       author: {
-        id: 'botuser',
+        id: '123456789012345678',
         username: 'TestBot',
         discriminator: '1234',
         avatar: null,

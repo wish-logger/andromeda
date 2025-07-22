@@ -1,5 +1,5 @@
 import { Client } from '../client/Client';
-import { Interaction as InteractionPayload, InteractionType, ApplicationCommandInteractionData, ApplicationCommandInteractionDataOption } from '../types/Interaction';
+import { Interaction as InteractionPayload, InteractionType, ApplicationCommandInteractionData, ApplicationCommandInteractionDataOption, ResolvedData } from '../types/Interaction';
 import { MessageFlags } from '../types/Message';
 import { User } from '../structures/User'
 import { Member } from '../structures/Member'
@@ -8,15 +8,22 @@ import { INTERACTION_CALLBACK } from '../rest/Endpoints';
 import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
 import { Channel, ChannelType } from '../structures/Channel';
 import { ApplicationCommandOptionType } from '../types/ApplicationCommand';
+import { Role } from '../structures/Role';
 
 /**
  * A helper class to simplify accessing interaction options.
  */
 class InteractionOptions {
     private options: ApplicationCommandInteractionDataOption[] | undefined;
+    private resolved: ResolvedData | undefined;
+    private client: Client;
+    private guildId?: string;
 
-    constructor(options: ApplicationCommandInteractionDataOption[] | undefined) {
+    constructor(client: Client, options: ApplicationCommandInteractionDataOption[] | undefined, resolved: ResolvedData | undefined, guildId?: string) {
+        this.client = client;
         this.options = options;
+        this.resolved = resolved;
+        this.guildId = guildId;
     }
 
     /**
@@ -42,21 +49,27 @@ class InteractionOptions {
 
         switch (option.type) {
             case ApplicationCommandOptionType.STRING:
-            case ApplicationCommandOptionType.USER:
-            case ApplicationCommandOptionType.CHANNEL:
-            case ApplicationCommandOptionType.ROLE:
-            case ApplicationCommandOptionType.MENTIONABLE:
                 return option.value as string;
             case ApplicationCommandOptionType.INTEGER:
             case ApplicationCommandOptionType.NUMBER:
                 return option.value as number;
             case ApplicationCommandOptionType.BOOLEAN:
                 return option.value as boolean;
+            case ApplicationCommandOptionType.USER:
+                return this.getUser(name);
+            case ApplicationCommandOptionType.CHANNEL:
+                return this.getChannel(name);
+            case ApplicationCommandOptionType.ROLE:
+                return this.getRole(name);
+            case ApplicationCommandOptionType.MENTIONABLE:
+                return this.getUser(name) || this.getRole(name) || option.value as string;
             case ApplicationCommandOptionType.SUB_COMMAND:
             case ApplicationCommandOptionType.SUB_COMMAND_GROUP:
+                // For subcommands and subcommand groups, return the whole option object
+                // as they contain nested options.
                 return option;
             default:
-                return option.value;
+                return option.value; // Fallback for any other types or if value is already suitable
         }
     }
 
@@ -91,33 +104,63 @@ class InteractionOptions {
     }
 
     /**
-     * Retrieves the value of a user option.
-     * @param name The name of the option.
-     * @returns The user ID string of the option, or undefined if not found.
+     * Retrieves a User object from a user option.
+     * @param name The name of the user option.
+     * @returns The User object, or undefined if not found.
      */
-    public getUser(name: string): string | undefined {
+    public getUser(name: string): User | undefined {
         const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.USER);
-        return option?.value as string | undefined;
+        if (!option?.value || !this.resolved?.users) return undefined;
+        const userData = this.resolved.users[option.value as string];
+        return userData ? new User(this.client, userData) : undefined;
     }
 
     /**
-     * Retrieves the value of a channel option.
-     * @param name The name of the option.
-     * @returns The channel ID string of the option, or undefined if not found.
+     * Retrieves a Member object from a user or mentionable option.
+     * @param name The name of the user or mentionable option.
+     * @returns The Member object, or undefined if not found.
      */
-    public getChannel(name: string): string | undefined {
+    public getMember(name: string): Member | undefined {
+        const option = this.options?.find(opt => (opt.name === name && (opt.type === ApplicationCommandOptionType.USER || opt.type === ApplicationCommandOptionType.MENTIONABLE)));
+        if (!option?.value || !this.resolved?.members || !this.resolved.users || !this.guildId) return undefined;
+
+        const memberId = option.value as string;
+        const memberData = this.resolved.members[memberId];
+        const userData = this.resolved.users[memberId]; // Need the full user object for Member constructor
+
+        if (memberData && userData) {
+            // Create a full member object by merging resolved member data with the resolved user object
+            // and providing the client and guildId
+            const fullMemberData = { ...memberData, user: userData };
+            return new Member(this.client, fullMemberData, this.guildId);
+        }
+        return undefined;
+    }
+
+    /**
+     * Retrieves a Channel object from a channel option.
+     * @param name The name of the channel option.
+     * @returns The Channel object, or undefined if not found.
+     */
+    public getChannel(name: string): Channel | undefined {
         const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.CHANNEL);
-        return option?.value as string | undefined;
+        if (!option?.value || !this.resolved?.channels) return undefined;
+        const channelData = this.resolved.channels[option.value as string];
+        // Note: For now, we instantiate as Channel.
+        return channelData ? new Channel(this.client, channelData) : undefined;
     }
 
     /**
-     * Retrieves the value of a role option.
+     * Retrieves a Role object from a role option.
      * @param name The name of the option.
-     * @returns The role ID string of the option, or undefined if not found.
+     * @returns The Role object, or undefined if not found.
      */
-    public getRole(name: string): string | undefined {
+    public getRole(name: string): Role | undefined {
         const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.ROLE);
-        return option?.value as string | undefined;
+        if (!option?.value || !this.resolved?.roles) return undefined;
+        const roleData = this.resolved.roles[option.value as string];
+        // Note: Role constructor typically needs guildId, but resolved roles might not always have it direct.
+        return roleData ? new Role(this.client, roleData, this.guildId || 'unknown') : undefined;
     }
 
     /**
@@ -205,15 +248,17 @@ export class Interaction {
      */
     public get channel(): Channel | undefined {
         if (!this.channelId) return undefined;
-        // For now, we only have the ID. In a real scenario, we'll fetch the full channel object from cachce
-        return new Channel(this.client, { id: this.channelId, type: ChannelType.GUILD_TEXT });
+        if (this.data?.resolved?.channels && this.data.resolved.channels[this.channelId]) {
+            return new Channel(this.client, this.data.resolved.channels[this.channelId]);
+        }
+        return new Channel(this.client, { id: this.channelId, type: ChannelType.GUILD_TEXT }); // Fallback if not resolved
     }
 
     /**
-     * A simplified way to access command options.
+     * Access to command options.
      */
     public get options(): InteractionOptions {
-        return new InteractionOptions(this.data?.options);
+        return new InteractionOptions(this.client, this.data?.options, this.data?.resolved, this.guildId);
     }
 
     /**

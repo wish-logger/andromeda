@@ -107,6 +107,12 @@ export class User {
     public avatarDecoration: string | null;
 
     /**
+     * The date and time the user account was created.
+     * @type {Date}
+     */
+    public createdAt: Date;
+
+    /**
      *  User's collectibles
      * @type {object | null}
      */
@@ -141,6 +147,8 @@ export class User {
         this.premiumType = data.premium_type ?? null;
         this.publicFlags = data.public_flags ?? null;
         this.avatarDecoration = data.avatar_decoration ?? null;
+        const snowflakeTimestamp = BigInt(this.id) >> 22n;
+        this.createdAt = new Date(Number(snowflakeTimestamp) + 1420070400000);
         this.collectibles = data.collectibles ?? null
         this.primaryGuild = data.primary_guild ?? null
     }

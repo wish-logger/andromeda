@@ -147,11 +147,11 @@ describe('GatewayManager', () => {
     const currentWs = createdWsInstances[0];
     const messageHandler = currentWs.on.mock.calls.find((call: any[]) => call[0] === 'message')[1];
 
-    const readyPayload = { op: 0, t: 'READY', s: 2, d: { user: { id: 'user1', username: 'TestUser' }, session_id: 'mock_session_id' } };
+    const readyPayload = { op: 0, t: 'READY', s: 2, d: { user: { id: '123456789012345679', username: 'TestUser' }, session_id: 'mock_session_id' } };
     messageHandler(JSON.stringify(readyPayload));
 
     expect(client.user).toBeDefined();
-    expect(client.user.id).toBe('user1');
+    expect(client.user.id).toBe('123456789012345679'); // Changed from 'user1' to a numeric string
     expect(client.user.username).toBe('TestUser');
     expect((gatewayManager as any).sessionId).toBe('mock_session_id');
   });
@@ -164,7 +164,7 @@ describe('GatewayManager', () => {
     const initialMessageHandler = initialWs.on.mock.calls.find((call: any[]) => call[0] === 'message')[1];
 
     initialOpenHandler(); // Triggers initial IDENTIFY
-    const readyPayload = { op: 0, t: 'READY', s: 2, d: { user: { id: 'user1', username: 'TestUser' }, session_id: 'mock_session_id' } };
+    const readyPayload = { op: 0, t: 'READY', s: 2, d: { user: { id: '123456789012345679', username: 'TestUser' }, session_id: 'mock_session_id' } }; // Changed from 'user1' to a numeric string
     initialMessageHandler(JSON.stringify(readyPayload));
 
     // Simulate disconnection by calling close on the initial WS instance
@@ -209,7 +209,7 @@ describe('GatewayManager', () => {
 
     // Simulate initial connection and READY event to set session_id and lastSequence
     initialOpenHandler();
-    const readyPayload = { op: 0, t: 'READY', s: 5, d: { user: { id: 'user1', username: 'TestUser' }, session_id: 'mock_session_id' } };
+    const readyPayload = { op: 0, t: 'READY', s: 5, d: { user: { id: '123456789012345679', username: 'TestUser' }, session_id: 'mock_session_id' } }; // Changed from 'user1' to a numeric string
     messageHandlerForInitialWs(JSON.stringify(readyPayload));
 
     // Simulate invalidating the current WebSocket connection
