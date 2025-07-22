@@ -34,9 +34,9 @@ export async function GetUser(client: Client, userId: string): Promise<User | nu
  * @param userId The ID of the user whose member data is to be fetched.
  * @returns A Promise that resolves to a Member object if found, or null if the member could not be fetched.
  */
-export async function GetGuildMember(client: Client, guildId: string, userId: string): Promise<Member | null> {
+export async function GetMember(client: Client, guildId: string, userId: string): Promise<Member | null> {
     try {
-        
+
         const memberData = await client.rest.request(
             'GET',
             GUILD_MEMBER(guildId, userId)
