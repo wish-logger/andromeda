@@ -7,14 +7,22 @@ Andromeda is not built for any other Discord bots out there. Its purpose is to b
 ## Simple index.ts
 
 ```typescript
-import { Client } from './src/client/Client';
+import { Client } from '../src/client/Client';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 
-const client = new Client();
+const client = new Client({
+    intents: [
+        Client.MESSAGE_CONTENT,
+        Client.GUILD_MEMBERS,
+        Client.GUILD_MESSAGES,
+    ]
+});
 
 const token = ""
 
 client.on('ready', async () => {
-    console.log(`Logged in as ${client.user.username}!`);
+    console.log(`Logged in as ${client.user.username}`);
 
     client.setPresence({
         activities: [{
@@ -26,12 +34,26 @@ client.on('ready', async () => {
         afk: false,
     });
 
-    // Load your modules
+    const commandsDir = path.join(__dirname, 'commands');
+
     try {
-        await client.modules.loadModule('Ping', './tests/commands/ping.ts');
+        const commandFiles = await fs.readdir(commandsDir);
+        
+        for (const file of commandFiles) {
+            if (file.endsWith('.ts')) {
+                const commandName = file.replace('.ts', '');
+                const commandPath = path.join(commandsDir, file);
+                try {
+                    await client.modules.loadCommand(commandName, commandPath);
+                } catch (error) {
+                    console.error(`Failed to load command "${commandName}":`, error);
+                }
+            }
+        }
     } catch (error) {
-        console.error('Failed to load Ping', error);
+        console.error('Failed to read commands directory:', error);
     }
+
 });
 
 client.login(token);
@@ -40,20 +62,16 @@ client.login(token);
 ## Simple ping.ts command
 
 ```typescript
-import { Module } from '../../src/structures/Module';
-import { Client } from '../../src/client/Client';
+import { SlashCommandBuilder, Interaction } from '../../src/Builders/structures/SlashCommandBuilder';
 
-export default class Ping extends Module {
-    constructor(client: Client) {
-        super(client);
-
-        this.addSlashCommand({
-            name: 'ping',
-            description: 'Pong?',
-            execute: async (interaction) => {
-                await interaction.reply({ content: 'Pong!', ephemeral: true });
-            },
-        });
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('ping')
+        .setDescription('Pong?')
+        .setDMPermission(true),
+    
+    async execute(interaction: Interaction) {
+        await interaction.reply({ content: 'Pong!', ephemeral: true });
     }
-}
+};
 ```
