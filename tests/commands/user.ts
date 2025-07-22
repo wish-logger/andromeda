@@ -24,7 +24,7 @@ module.exports = {
             .setColor(EmbedBuilder.Colors.DarkButNotBlack);
 
         embed.addFields(
-            { name: `Username`, value: `${user.username}${user.discriminator !== '0' ? `#${user.discriminator}` : ''}`, inline: true },
+            { name: `Username`, value: `${user.username}`, inline: true },
             { name: `Global Name`, value: `${user.globalName || 'N/A'}`, inline: true },
             { name: `ID`, value: `${user.id}`, inline: true },
             { name: `Bot`, value: `${user.bot ? 'Yes' : 'No'}`, inline: true },
