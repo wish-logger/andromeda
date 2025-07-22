@@ -2,16 +2,16 @@ import { Client } from '../src/client/Client';
 
 
 // without intents
-const client = new Client()
+// const client = new Client()
 
 // With intents
-
-// const client = new Client({
-//     intents: [
-//         Client.MESSAGE_CONTENT,
-//         Client.GUILD_MEMBERS
-//     ]
-// });
+const client = new Client({
+    intents: [
+        Client.MESSAGE_CONTENT,
+        Client.GUILD_MEMBERS,
+        Client.GUILD_MESSAGES,
+    ]
+});
 
 const token = ""
 
