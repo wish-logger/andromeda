@@ -1,4 +1,4 @@
-import { ButtonBuilder, ButtonStyle } from './ButtonBuilder';
+import { ButtonBuilder, ButtonStyle } from '../ButtonBuilder';
 import { StringSelectMenuBuilder } from './StringSelectMenuBuilder';
 import { ComponentType } from '../../../types/Component';
 

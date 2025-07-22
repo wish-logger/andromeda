@@ -4,7 +4,7 @@ import { SectionBuilder } from './SectionBuilder';
 import { MediaGalleryBuilder } from './MediaGalleryBuilder';
 import { SeparatorBuilder } from './SeparatorBuilder';
 import { ActionRowBuilder } from '../components/ActionRowBuilder';
-import { ButtonBuilder } from '../components/ButtonBuilder';
+import { ButtonBuilder } from '../ButtonBuilder';
 import { StringSelectMenuBuilder } from '../components/StringSelectMenuBuilder';
 
 /**

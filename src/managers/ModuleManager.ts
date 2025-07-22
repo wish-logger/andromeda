@@ -25,6 +25,18 @@ export class ModuleManager {
                 }
             }
         });
+
+        this.client.on('messageComponentCreate', async (interaction) => {
+            for (const command of this.registeredCommands.values()) {
+                if (command.handleComponent) {
+                    try {
+                        await command.handleComponent(interaction);
+                    } catch (error) {
+                        console.error(`Error while handling component interaction for command ${command.name}:`, error);
+                    }
+                }
+            }
+        });
     }
 
     /**
@@ -52,6 +64,7 @@ export class ModuleManager {
             const registeredCommand: RegisteredSlashCommand = {
                 ...registeredCommandData,
                 execute: commandModule.execute,
+                handleComponent: commandModule.handleComponent,
             };
             
             this.registeredCommands.set(registeredCommand.name, registeredCommand);

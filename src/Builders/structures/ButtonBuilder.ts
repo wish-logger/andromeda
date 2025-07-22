@@ -1,4 +1,4 @@
-import { ComponentType } from '../../../types/Component';
+import { ComponentType } from '../../types/Component';
 
 /**
  * Enum for button styles.

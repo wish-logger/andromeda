@@ -17,11 +17,16 @@ export interface SlashCommandDefinition {
      * @returns {Promise<void> | void}
      */
     execute: (interaction: Interaction) => Promise<void> | void;
+    /**
+     * An optional function to handle component interactions (e.g., button clicks) for this command.
+     * @param {Interaction} interaction The interaction object.
+     * @returns {Promise<void> | void}
+     */
+    handleComponent?: (interaction: Interaction) => Promise<void> | void;
 }
 
 /**
- * Represents a slash command that has been registered with Discord.
- * This includes the 'id' assigned by Discord.
+ * Represents a registered slash command with its execute function.
  */
 export interface RegisteredSlashCommand extends ApplicationCommand {
     /**
@@ -30,4 +35,10 @@ export interface RegisteredSlashCommand extends ApplicationCommand {
      * @returns {Promise<void> | void}
      */
     execute: (interaction: Interaction) => Promise<void> | void;
+    /**
+     * An optional function to handle component interactions (e.g., button clicks) for this command.
+     * @param {Interaction} interaction The interaction object.
+     * @returns {Promise<void> | void}
+     */
+    handleComponent?: (interaction: Interaction) => Promise<void> | void;
 }

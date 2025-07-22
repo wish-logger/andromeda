@@ -18,6 +18,8 @@ import { TextDisplayBuilder } from '../Builders/structures/v2/TextDisplayBuilder
 import { MediaGalleryBuilder } from '../Builders/structures/v2/MediaGalleryBuilder';
 import { SeparatorBuilder } from '../Builders/structures/v2/SeparatorBuilder';
 import { ActionRowBuilder } from '../Builders/structures/components/ActionRowBuilder';
+import { ButtonBuilder } from '../Builders/structures/ButtonBuilder';
+import { StringSelectMenuBuilder } from '../Builders/structures/components/StringSelectMenuBuilder';
 
 /**
  * A helper class to simplify accessing interaction options.
@@ -242,7 +244,7 @@ export class Interaction {
         this.user = data.user;
         this.token = data.token;
         this.version = data.version;
-        this.message = data.message;
+        this.message = data.message ? new Message(client, data.message) : undefined;
     }
 
     /**
@@ -279,7 +281,7 @@ export class Interaction {
      * @param {boolean} [options.ephemeral] Whether the reply should be ephemeral (only visible to the user who invoked the interaction). Defaults to `false`.
      * @returns {Promise<void>}
      */
-    public async reply(options: string | { content?: string; embeds?: any[]; ephemeral?: boolean; componentsV2?: (ContainerBuilder | SectionBuilder | TextDisplayBuilder | MediaGalleryBuilder | SeparatorBuilder | ActionRowBuilder)[] }): Promise<void> {
+    public async reply(options: string | { content?: string; embeds?: any[]; ephemeral?: boolean; componentsV2?: (ContainerBuilder | SectionBuilder | TextDisplayBuilder | MediaGalleryBuilder | SeparatorBuilder | ActionRowBuilder)[]; components?: ActionRowBuilder[] }): Promise<void> {
         let payload: any;
         let flags = 0;
 
@@ -294,8 +296,9 @@ export class Interaction {
             if (options.componentsV2 && options.componentsV2.length > 0) {
                 payload.components_v2 = options.componentsV2.map(comp => comp.toJSON());
                 flags |= MessageFlags.IS_COMPONENTS_V2;
-                // delete payload.content; // idk
-                delete payload.embeds;
+                delete payload.components;
+            } else if (options.components && options.components.length > 0) {
+                payload.components = options.components.map(comp => comp.toJSON());
             }
         }
 
@@ -307,6 +310,40 @@ export class Interaction {
                 data: {
                     ...payload,
                     flags: flags,
+                },
+            }
+        );
+    }
+
+    /**
+     * Updates the original interaction response message.
+     * @param {string | { content?: string; embeds?: any[]; components?: ActionRowBuilder[]; componentsV2?: (ContainerBuilder | SectionBuilder | TextDisplayBuilder | MediaGalleryBuilder | SeparatorBuilder | ActionRowBuilder)[] }} options The message content or an object with message options to update.
+     * @returns {Promise<void>}
+     */
+    public async update(options: string | { content?: string; embeds?: any[]; components?: ActionRowBuilder[]; componentsV2?: (ContainerBuilder | SectionBuilder | TextDisplayBuilder | MediaGalleryBuilder | SeparatorBuilder | ActionRowBuilder)[] }): Promise<void> {
+        let payload: any;
+        
+        if (typeof options === 'string') {
+            payload = { content: options };
+        } else {
+            payload = options;
+
+            if (options.componentsV2 && options.componentsV2.length > 0) {
+                payload.components_v2 = options.componentsV2.map(comp => comp.toJSON());
+
+                delete payload.components;
+            } else if (options.components && options.components.length > 0) {
+                payload.components = options.components.map(comp => comp.toJSON());
+            }
+        }
+
+        await this.client.rest.request(
+            'POST',
+            INTERACTION_CALLBACK(this.id, this.token),
+            {
+                type: 7,
+                data: {
+                    ...payload,
                 },
             }
         );

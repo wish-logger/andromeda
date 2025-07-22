@@ -38,7 +38,22 @@ export class InteractionManager {
                  */
                 this.client.emit('applicationCommandCreate', interaction);
                 break;
-            // TODO: Handle other interaction types (MESSAGE_COMPONENT, MODAL_SUBMIT, etc.)
+            case InteractionType.MESSAGE_COMPONENT:
+                /**
+                 * Emitted when a message component interaction (e.g., button click, select menu use) is created.
+                 * @event Client#messageComponentCreate
+                 * @param {Interaction} interaction The created interaction.
+                 */
+                this.client.emit('messageComponentCreate', interaction);
+                break;
+            case InteractionType.MODAL_SUBMIT:
+                /**
+                 * Emitted when a modal submit interaction is created.
+                 * @event Client#modalSubmitCreate
+                 * @param {Interaction} interaction The created interaction.
+                 */
+                this.client.emit('modalSubmitCreate', interaction);
+                break;
             default:
                 console.warn(`Unhandled interaction type: ${interaction.type}`);
                 break;
