@@ -7,6 +7,12 @@ import { InteractionManager } from '../managers/InteractionManager';
 import { ApplicationCommand, ApplicationCommandData } from '../types/ApplicationCommand';
 import { ModuleManager } from '../managers/ModuleManager';
 import { ClientOptions, GatewayIntentBits } from '../types/Intents';
+import {
+    APPLICATION_COMMANDS,
+    GUILD_APPLICATION_COMMANDS,
+    APPLICATION_COMMAND,
+    GUILD_APPLICATION_COMMAND,
+} from '../rest/Endpoints';
 
 /**
  * The main client for interacting with the Discord API.
@@ -89,8 +95,8 @@ export class Client extends EventEmitter {
     constructor(options?: ClientOptions) {
         super();
         this.intents = this.$calculateIntents(options?.intents);
-        this.clusterId = options?.clusterId ?? 0; // Default to 0
-        this.totalClusters = options?.totalClusters ?? 1; // Default to 1 (no clustering)
+        this.clusterId = options?.clusterId ?? 0;
+        this.totalClusters = options?.totalClusters ?? 1;
         this.gateway = new GatewayManager(this);
         this.rest = new RestManager(this);
         this.interactions = new InteractionManager(this);
@@ -162,7 +168,7 @@ export class Client extends EventEmitter {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
-        return this.rest.request('POST', `/applications/${this.user.id}/commands`, command);
+        return this.rest.request('POST', APPLICATION_COMMANDS(this.user.id), command);
     }
 
     /**
@@ -175,7 +181,7 @@ export class Client extends EventEmitter {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
-        return this.rest.request('POST', `/applications/${this.user.id}/guilds/${guildId}/commands`, command);
+        return this.rest.request('POST', GUILD_APPLICATION_COMMANDS(this.user.id, guildId), command);
     }
 
     /**
@@ -186,7 +192,7 @@ export class Client extends EventEmitter {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
-        return this.rest.request('GET', `/applications/${this.user.id}/commands`);
+        return this.rest.request('GET', APPLICATION_COMMANDS(this.user.id));
     }
 
     /**
@@ -198,7 +204,7 @@ export class Client extends EventEmitter {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
-        return this.rest.request('GET', `/applications/${this.user.id}/guilds/${guildId}/commands`);
+        return this.rest.request('GET', GUILD_APPLICATION_COMMANDS(this.user.id, guildId));
     }
 
     /**
@@ -210,7 +216,7 @@ export class Client extends EventEmitter {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
-        await this.rest.request('DELETE', `/applications/${this.user.id}/commands/${commandId}`);
+        await this.rest.request('DELETE', APPLICATION_COMMAND(this.user.id, commandId));
     }
 
     /**
@@ -223,6 +229,6 @@ export class Client extends EventEmitter {
         if (!this.user) {
             throw new Error('Client user not available. Log in first.');
         }
-        await this.rest.request('DELETE', `/applications/${this.user.id}/guilds/${guildId}/commands/${commandId}`);
+        await this.rest.request('DELETE', GUILD_APPLICATION_COMMAND(this.user.id, guildId, commandId));
     }
 }

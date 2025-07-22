@@ -1,4 +1,9 @@
-import { ApplicationCommandOptionType } from './ApplicationCommand';
+import { ApplicationCommandOptionType, ApplicationCommandType } from './ApplicationCommand';
+import { Member } from '../structures/Member'
+import { User } from '../structures/User'
+import { Message } from '../structures/Message'
+import { Channel } from '../structures/Channel';
+import { Role } from '../structures/Role';
 
 /**
  * Represents a Discord interaction.
@@ -7,14 +12,14 @@ export interface Interaction {
     id: string;
     application_id: string;
     type: InteractionType;
-    data?: InteractionData;
+    data?: ApplicationCommandInteractionData;
     guild_id?: string;
     channel_id?: string;
-    member?: any; // TODO: Create Member structure
-    user?: any; // TODO: Create User structure
+    member?: Member;
+    user: User;
     token: string;
     version: number;
-    message?: any; // TODO: Create Message structure
+    message?: Message;
 }
 
 /**
@@ -29,25 +34,39 @@ export enum InteractionType {
 }
 
 /**
- * Represents the data associated with an interaction.
+ * Represents the data associated with an Application Command interaction.
+ * This applies to CHAT_INPUT, USER, and MESSAGE command types.
  */
-export interface InteractionData {
+export interface ApplicationCommandInteractionData {
     id: string;
     name: string;
-    type: ApplicationCommandOptionType;
-    resolved?: any; // TODO: Define resolved data structure
-    options?: InteractionDataOption[];
-    custom_id?: string; // For message components
-    component_type?: number; // For message components
-    values?: string[]; // For select menus
+    type: ApplicationCommandType;
+    resolved?: ResolvedData;
+    options?: ApplicationCommandInteractionDataOption[];
+    guild_id?: string;
+    target_id?: string; // For USER and MESSAGE commands
 }
 
 /**
- * Represents an option within interaction data.
+ * Represents an option within Application Command interaction data.
  */
-export interface InteractionDataOption {
+export interface ApplicationCommandInteractionDataOption {
     name: string;
     type: ApplicationCommandOptionType;
-    value?: any;
-    options?: InteractionDataOption[];
+    value?: string | number | boolean;
+    focused?: boolean;
+    options?: ApplicationCommandInteractionDataOption[]; // subcommands/groups
+}
+
+/**
+ * Represents resolved data for an Application Command interaction.
+ * Contains full objects for users, members, roles, channels, messages, etc.
+ */
+export interface ResolvedData {
+    users?: { [id: string]: User };
+    members?: { [id: string]: Omit<Member, 'user' | 'guildId' | 'client'> & { user: User } };
+    roles?: { [id: string]: Role };
+    channels?: { [id: string]: Channel };
+    messages?: { [id: string]: Message };
+    // Attachments will be added later (if needed)
 }

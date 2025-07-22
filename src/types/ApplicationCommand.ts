@@ -1,3 +1,5 @@
+import { LocalizationMap } from '../Builders/types/Localization';
+
 /**
  * Represents an application command (slash command) data for registration.
  * This interface is used when sending command data to Discord.
@@ -7,6 +9,10 @@ export interface ApplicationCommandData {
     description: string;
     options?: ApplicationCommandOption[];
     default_permission?: boolean;
+    default_member_permissions?: string;
+    dm_permission?: boolean;
+    name_localizations?: LocalizationMap;
+    description_localizations?: LocalizationMap;
     type?: ApplicationCommandType;
 }
 

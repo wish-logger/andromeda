@@ -1,11 +1,16 @@
-import { ApplicationCommandData, ApplicationCommand } from './ApplicationCommand';
+import { ApplicationCommandData, ApplicationCommand, ApplicationCommandOption } from './ApplicationCommand';
 import { Interaction } from '../structures/Interaction';
 
 /**
- * Represents a slash command definition within a Module.
- * This is the structure you will use to define commands in your modules.
+ * Represents the structure of a slash command module to be loaded by the ModuleManager.
+ * This allows defining command data using SlashCommandBuilder and an execute function.
  */
-export interface SlashCommandDefinition extends ApplicationCommandData {
+export interface SlashCommandDefinition {
+    /**
+     * The data for the slash command, typically built using SlashCommandBuilder.
+     * @type {ApplicationCommandData}
+     */
+    data: ApplicationCommandData;
     /**
      * The function to execute when this slash command is invoked.
      * @param {Interaction} interaction The interaction object.

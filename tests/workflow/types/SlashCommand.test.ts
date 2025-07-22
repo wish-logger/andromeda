@@ -25,16 +25,18 @@ const mockInteraction: Interaction = {
 describe('SlashCommand Types', () => {
   it('should allow creating an object conforming to SlashCommandDefinition', async () => {
     const commandDefinition: SlashCommandDefinition = {
-      name: 'mycommand',
-      description: 'My awesome command',
-      type: ApplicationCommandType.CHAT_INPUT,
+      data: {
+        name: 'mycommand',
+        description: 'My awesome command',
+        type: ApplicationCommandType.CHAT_INPUT,
+      },
       execute: async (interaction) => {
         await interaction.reply({ content: 'Executed!' });
       },
     };
 
     expect(commandDefinition).toBeDefined();
-    expect(commandDefinition.name).toBe('mycommand');
+    expect(commandDefinition.data.name).toBe('mycommand');
     expect(typeof commandDefinition.execute).toBe('function');
 
     await commandDefinition.execute(mockInteraction);

@@ -1,10 +1,7 @@
 import { Client } from '../src/client/Client';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 
-
-// without intents
-// const client = new Client()
-
-// With intents
 const client = new Client({
     intents: [
         Client.MESSAGE_CONTENT,
@@ -28,50 +25,26 @@ client.on('ready', async () => {
         afk: false,
     });
 
-    console.log('Presence set!');
+    const commandsDir = path.join(__dirname, 'commands');
 
-    // Load the ping command
     try {
-        await client.modules.loadModule('Ping', './commands/ping.ts');
+        const commandFiles = await fs.readdir(commandsDir);
+        
+        for (const file of commandFiles) {
+            if (file.endsWith('.ts')) {
+                const commandName = file.replace('.ts', '');
+                const commandPath = path.join(commandsDir, file);
+                try {
+                    await client.modules.loadCommand(commandName, commandPath);
+                } catch (error) {
+                    console.error(`Failed to load command "${commandName}":`, error);
+                }
+            }
+        }
     } catch (error) {
-        console.error('Failed to load Ping:', error);
+        console.error('Failed to read commands directory:', error);
     }
 
-    // Examples of setting status:
-
-    // Setting only status (without activity)
-    
-    // client.setPresence({
-    //     status: 'idle', // 'online', 'dnd', 'idle', 'invisible'
-    // });
-    
-
-    // Setting status with empty activity (also without displayed activity)
-    
-    // client.setPresence({
-    //     activities: [],
-    //     status: 'dnd',
-    // });
-
-    // Setting custom status (e.g. "making an game")
-
-    /*
-    client.setPresence({
-        activities: [{
-            name: 'Custom Status', // To pole jest wymagane, ale może być ogólne
-            type: ActivityType.CUSTOM,               // Typ 4 oznacza "Custom Status"
-            state: 'making an game', // Tekst niestandardowego statusu
-        }],
-        status: 'online',          // Możesz również ustawić status online/idle/dnd itp.
-    });
-    */
-
-});
-
-client.on('messageCreate', (message) => {
-    // TODO: Embeds
-    // for now just send new stuff in terminal
-    console.log(`New message in #${message.channel_id}: ${message.content}`);
 });
 
 client.login(token);

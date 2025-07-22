@@ -4,6 +4,7 @@
 export enum Colors {
     Default = 0x000000,
     White = 0xFFFFFF,
+    BlackButNotReallyBlack = 0xFFFFFF,
     Aqua = 0x1ABC9C,
     Green = 0x2ECC71,
     Blue = 0x3498DB,

@@ -1,5 +1,4 @@
 import { Client } from '../client/Client';
-import { SlashCommandDefinition } from '../types/SlashCommand'; // Changed import
 
 /**
  * The base class for all modules in the bot.
@@ -13,25 +12,11 @@ export abstract class Module {
     protected client: Client;
 
     /**
-     * An array of slash commands defined within this module.
-     * @type {SlashCommandDefinition[]} // Changed type
-     */
-    public readonly slashCommands: SlashCommandDefinition[] = [];
-
-    /**
      * Creates an instance of a Module.
      * @param {Client} client The client instance.
      */
     constructor(client: Client) {
         this.client = client;
-    }
-
-    /**
-     * Adds a slash command to this module.
-     * @param {SlashCommandDefinition} command The slash command definition. // Changed type
-     */
-    protected addSlashCommand(command: SlashCommandDefinition): void { // Changed type
-        this.slashCommands.push(command);
     }
 
     /**

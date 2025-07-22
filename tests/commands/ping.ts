@@ -1,16 +1,13 @@
-import { Module } from '../../src/structures/Module';
-import { Client } from '../../src/client/Client';
+import { SlashCommandBuilder, Interaction } from '../../src/Builders/structures/SlashCommandBuilder';
 
-export default class Ping extends Module {
-    constructor(client: Client) {
-        super(client);
-
-        this.addSlashCommand({
-            name: 'ping',
-            description: 'Pong?',
-            execute: async (interaction) => {
-                await interaction.reply({ content: 'Pong!', ephemeral: true });
-            },
-        });
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('ping')
+        .setDescription('Pong?')
+        .setDMPermission(true)
+        .toJSON(),
+    
+    async execute(interaction: Interaction) {
+        await interaction.reply({ content: 'Pong!', ephemeral: true });
     }
-}
+};

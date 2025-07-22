@@ -1,6 +1,7 @@
 import { Client } from '../client/Client';
 import { User } from './User';
-import { Member } from './Member'
+import { Member } from './Member';
+import { CHANNEL_MESSAGES } from '../rest/Endpoints';
 import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
 
 export interface MessageAttachment {
@@ -614,5 +615,15 @@ export class Message {
     public async crosspost(): Promise<Message> {
         // This would be implemented with API calls
         throw new Error('Method not implemented - requires API implementation');
+    }
+
+    /**
+     * Sends a message to the channel this message belongs to.
+     * @param {string | object} content The content of the message or message options.
+     * @returns {Promise<Message>} The sent message.
+     */
+    public async send(content: string | object): Promise<Message> {
+        const payload = typeof content === 'string' ? { content } : content;
+        return this.client.rest.request('POST', CHANNEL_MESSAGES(this.channelId), payload);
     }
 }

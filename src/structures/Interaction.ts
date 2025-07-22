@@ -1,9 +1,12 @@
 import { Client } from '../client/Client';
-import { Interaction as InteractionPayload, InteractionType } from '../types/Interaction';
+import { Interaction as InteractionPayload, InteractionType, ApplicationCommandInteractionData } from '../types/Interaction';
 import { MessageFlags } from '../types/Message';
 import { User } from '../structures/User'
 import { Member } from '../structures/Member'
 import { Message } from '../structures/Message'
+import { INTERACTION_CALLBACK } from '../rest/Endpoints';
+import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
+
 /**
  * Represents a Discord interaction.
  */
@@ -11,14 +14,14 @@ export class Interaction {
     public id: string;
     public applicationId: string;
     public type: InteractionType;
-    public data: any; // TODO: Type this properly
+    public data?: ApplicationCommandInteractionData;
     public guildId?: string;
     public channelId?: string;
-    public member: Member;
+    public member?: Member;
     public user: User;
     public token: string;
     public version: number;
-    public message: Message;
+    public message?: Message;
 
     private client: Client;
 
@@ -43,6 +46,15 @@ export class Interaction {
     }
 
     /**
+     * Creates and returns a new EmbedBuilder instance.
+     * This allows for fluent embed construction directly from an interaction context.
+     * @returns {EmbedBuilder} A new EmbedBuilder instance.
+     */
+    public createEmbed(): EmbedBuilder {
+        return new EmbedBuilder();
+    }
+
+    /**
      * Replies to the interaction.
      * @param {string | { content?: string; embeds?: any[]; ephemeral?: boolean }} options The message content or an object with message options.
      * @param {boolean} [options.ephemeral] Whether the reply should be ephemeral (only visible to the user who invoked the interaction). Defaults to `false`.
@@ -63,7 +75,7 @@ export class Interaction {
 
         await this.client.rest.request(
             'POST',
-            `/interactions/${this.id}/${this.token}/callback`,
+            INTERACTION_CALLBACK(this.id, this.token),
             {
                 type: 4,
                 data: {
