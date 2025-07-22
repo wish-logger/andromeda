@@ -1,10 +1,10 @@
 import { Client } from '../client/Client';
 import WebSocket from 'ws';
 import { User } from '../structures/User';
-import { $heartbeat } from './structures/.heartbeat';
-import { $identify } from './structures/.identify';
-import { $updatePresence } from './structures/.Presence';
-import { $resume } from './structures/.resume';
+import { $heartbeat } from './structures/heartbeat';
+import { $identify } from './structures/identify';
+import { $updatePresence } from './structures/Presence';
+import { $resume } from './structures/resume';
 import { GatewayOpcodes } from '../types/Gateway';
 import { EventManager } from './EventManager';
 
