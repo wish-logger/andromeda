@@ -11,6 +11,10 @@ import { MessageCacheManager } from '../managers/Cache/MessageCacheManager';
 import { GuildCacheManager } from '../managers/Cache/GuildCacheManager';
 import { ChannelCacheManager } from '../managers/Cache/ChannelCacheManager';
 import { UserCacheManager } from '../managers/Cache/UserCacheManager';
+import { PresenceCacheManager } from '../managers/Cache/PresenceCacheManager';
+import { VoiceStateCacheManager } from '../managers/Cache/VoiceStateCacheManager';
+import { MemberCacheManager } from '../managers/Cache/MemberCacheManager';
+import { IntegrationCacheManager } from '../managers/Cache/IntegrationCacheManager';
 import { ClientOptions, GatewayIntentBits } from '../types/Intents';
 import {
     APPLICATION_COMMANDS,
@@ -130,6 +134,26 @@ export class Client extends EventEmitter {
      * @type {UserCacheManager}
      */
     public userCache: UserCacheManager;
+    /**
+     * Manages cached presence data.
+     * @type {PresenceCacheManager}
+     */
+    public presenceCache: PresenceCacheManager;
+    /**
+     * Manages cached voice state data.
+     * @type {VoiceStateCacheManager}
+     */
+    public voiceStateCache: VoiceStateCacheManager;
+    /**
+     * Manages cached member data.
+     * @type {MemberCacheManager}
+     */
+    public memberCache: MemberCacheManager;
+    /**
+     * Manages cached integration data.
+     * @type {IntegrationCacheManager}
+     */
+    public integrationCache: IntegrationCacheManager;
 
     /**
      * Creates a new instance of the Discord client.
@@ -149,6 +173,10 @@ export class Client extends EventEmitter {
         this.guildCache = new GuildCacheManager(this);
         this.channelCache = new ChannelCacheManager(this);
         this.userCache = new UserCacheManager(this);
+        this.presenceCache = new PresenceCacheManager(this);
+        this.voiceStateCache = new VoiceStateCacheManager(this);
+        this.memberCache = new MemberCacheManager(this);
+        this.integrationCache = new IntegrationCacheManager(this);
     }
 
     /**
@@ -398,7 +426,7 @@ export class Client extends EventEmitter {
     public async fetchApplicationCommand(applicationId: bigint, commandId: bigint): Promise<any | null> {
         try {
             const commandData = await this.rest.request('GET', APPLICATION_COMMAND(applicationId.toString(), commandId.toString()));
-            return commandData; 
+            return commandData;
         } catch (error) {
             console.error(`Failed to fetch application command ${commandId}:`, error);
             return null;
@@ -441,7 +469,7 @@ export class Client extends EventEmitter {
             const roleData = await this.rest.request('GET', GUILD_ROLE(guildId.toString(), roleId.toString()));
             const RoleClass = (await import('../structures/Role')).Role;
             const role = new RoleClass(this, roleData, guildId.toString());
-            
+
             if (guild) {
                 guild.roles.set(role.id, role);
             }

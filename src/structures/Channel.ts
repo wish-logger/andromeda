@@ -6,6 +6,7 @@ import { PermissionOverwrite } from './PermissionOverwrite';
 import { ChannelType } from '../types/Channel';
 import { CHANNEL_MESSAGES, CHANNEL_BULK_DELETE } from '../rest/Endpoints';
 import { Message } from './Message';
+import { ThreadMetadata, ThreadMember } from '../types/Thread';
 
 export enum VideoQualityMode {
     AUTO = 1,
@@ -21,23 +22,6 @@ export enum ForumLayoutType {
     NOT_SET = 0,
     LIST_VIEW = 1,
     GALLERY_VIEW = 2,
-}
-
-export interface ThreadMetadata {
-    archived: boolean;
-    autoArchiveDuration: number;
-    archiveTimestamp: Date;
-    locked: boolean;
-    invitable?: boolean;
-    createTimestamp?: Date;
-}
-
-export interface ThreadMember {
-    id?: bigint;
-    userId?: bigint;
-    joinTimestamp: Date;
-    flags: number;
-    member?: Member;
 }
 
 export interface DefaultReaction {

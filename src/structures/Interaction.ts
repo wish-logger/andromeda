@@ -1,5 +1,5 @@
 import { Client } from '../client/Client';
-import { Interaction as InteractionPayload, InteractionType, ApplicationCommandInteractionData, ApplicationCommandInteractionDataOption, ResolvedData } from '../types/Interaction';
+import { InteractionData, InteractionType, ApplicationCommandInteractionData, ApplicationCommandInteractionDataOption, ResolvedData } from '../types/Interaction';
 import { MessageFlags } from '../types/Message';
 import { User } from '../structures/User';
 import { Member } from '../structures/Member';
@@ -322,9 +322,9 @@ export class Interaction {
     /**
      * Creates an instance of Interaction.
      * @param {Client} client The client instance.
-     * @param {InteractionPayload} data The raw interaction payload.
+     * @param {InteractionData} data The raw interaction payload.
      */
-    constructor(client: Client, data: InteractionPayload) {
+    constructor(client: Client, data: InteractionData) {
         this._client = client;
         this.id = BigInt(data.id);
         this.applicationId = BigInt(data.application_id);

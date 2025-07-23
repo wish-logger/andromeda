@@ -1,5 +1,5 @@
 import { Client } from '../client/Client';
-import { Interaction as InteractionPayload, InteractionType } from '../types/Interaction';
+import { InteractionData as InteractionPayload, InteractionType } from '../types/Interaction';
 import { Interaction } from '../structures/Interaction';
 
 /**

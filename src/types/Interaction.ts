@@ -8,7 +8,7 @@ import { Role } from '../structures/Role';
 /**
  * Represents a Discord interaction.
  */
-export interface Interaction {
+export interface InteractionData {
     id: string;
     application_id: string;
     type: InteractionType;

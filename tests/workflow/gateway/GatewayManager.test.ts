@@ -4,6 +4,7 @@ import { GatewayIntentBits } from '../../../src/types/Intents';
 import { ActivityType, PresenceUpdateStatus } from '../../../src/types/Presence';
 import WebSocket from 'ws';
 import { GatewayOpcodes } from '../../../src/types/Gateway';
+import { Message } from '../../../src/structures/Message';
 
 jest.mock('ws');
 
@@ -135,10 +136,29 @@ describe('GatewayManager', () => {
     const emitSpy = jest.spyOn(client, 'emit');
     const messageHandler = currentWs.on.mock.calls.find((call: any[]) => call[0] === 'message')[1];
 
-    const dispatchPayload = { op: 0, t: 'MESSAGE_CREATE', s: 1, d: { id: 'msg1', content: 'test' } };
+    const dispatchPayload = {
+      op: 0,
+      t: 'MESSAGE_CREATE',
+      s: 1,
+      d: {
+        id: '123456789012345678',
+        channel_id: '987654321098765432',
+        guild_id: '112233445566778899',
+        content: 'test',
+        author: {
+          id: '123456789012345679',
+          username: 'TestUser',
+          discriminator: '0000',
+          avatar: null,
+          bot: false,
+          system: false,
+          public_flags: 0
+        },
+      }
+    };
     messageHandler(JSON.stringify(dispatchPayload));
 
-    expect(emitSpy).toHaveBeenCalledWith('messageCreate', dispatchPayload.d);
+    expect(emitSpy).toHaveBeenCalledWith('messageCreate', expect.any(Message)); // Expect a Message object
     expect((gatewayManager as any).lastSequence).toBe(1);
   });
 
