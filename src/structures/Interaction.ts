@@ -1,9 +1,9 @@
 import { Client } from '../client/Client';
 import { Interaction as InteractionPayload, InteractionType, ApplicationCommandInteractionData, ApplicationCommandInteractionDataOption, ResolvedData } from '../types/Interaction';
 import { MessageFlags } from '../types/Message';
-import { User } from '../structures/User'
-import { Member } from '../structures/Member'
-import { Message } from '../structures/Message'
+import { User } from '../structures/User';
+import { Member } from '../structures/Member';
+import { Message } from '../structures/Message';
 import { INTERACTION_CALLBACK } from '../rest/Endpoints';
 import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
 import { Channel, ChannelType } from '../structures/Channel';
@@ -27,14 +27,41 @@ import { StringSelectMenuBuilder } from '../Builders/structures/components/Strin
 class InteractionOptions {
     private options: ApplicationCommandInteractionDataOption[] | undefined;
     private resolved: ResolvedData | undefined;
-    private client: Client;
-    private guildId?: string;
+    public client: Client;
+    private guildId?: bigint;
 
     constructor(client: Client, options: ApplicationCommandInteractionDataOption[] | undefined, resolved: ResolvedData | undefined, guildId?: string) {
         this.client = client;
         this.options = options;
         this.resolved = resolved;
-        this.guildId = guildId;
+        this.guildId = guildId ? BigInt(guildId) : undefined;
+    }
+
+    /**
+     * Helper method to recursively find an option by name within the options array.
+     * This handles nested options within subcommands and subcommand groups.
+     * @param optionsArray The current array of options to search.
+     * @param name The name of the option to find.
+     * @returns The found option, or undefined.
+     */
+    private _findOptionRecursive(optionsArray: ApplicationCommandInteractionDataOption[] | undefined, name: string): ApplicationCommandInteractionDataOption | undefined {
+        if (!optionsArray) return undefined;
+
+        let foundOption: ApplicationCommandInteractionDataOption | undefined;
+
+        for (const option of optionsArray) {
+            if ((option.type === ApplicationCommandOptionType.SUB_COMMAND || option.type === ApplicationCommandOptionType.SUB_COMMAND_GROUP) && option.options) {
+
+                const foundInSub = this._findOptionRecursive(option.options, name);
+                if (foundInSub) {
+                    return foundInSub;
+                }
+            }
+            if (option.name === name) {
+                foundOption = option;
+            }
+        }
+        return foundOption;
     }
 
     /**
@@ -43,7 +70,7 @@ class InteractionOptions {
      * @returns The value of the option, or undefined if not found.
      */
     public getValue(name: string): any | undefined {
-        const option = this.options?.find(opt => opt.name === name);
+        const option = this._findOptionRecursive(this.options, name);
         return option?.value;
     }
 
@@ -53,7 +80,7 @@ class InteractionOptions {
      * @returns The converted value of the option, or undefined if not found.
      */
     public getData(name: string): any | undefined {
-        const option = this.options?.find(opt => opt.name === name);
+        const option = this._findOptionRecursive(this.options, name);
         if (!option) {
             return undefined;
         }
@@ -78,7 +105,7 @@ class InteractionOptions {
             case ApplicationCommandOptionType.SUB_COMMAND_GROUP:
                 return option;
             default:
-                return option.value; // Fallback for any other types or if value is already suitable
+                return option.value;
         }
     }
 
@@ -88,7 +115,7 @@ class InteractionOptions {
      * @returns The string value of the option, or undefined if not found.
      */
     public getString(name: string): string | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.STRING);
+        const option = this._findOptionRecursive(this.options, name);
         return option?.value as string | undefined;
     }
 
@@ -98,7 +125,7 @@ class InteractionOptions {
      * @returns The integer value of the option, or undefined if not found.
      */
     public getInteger(name: string): number | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.INTEGER);
+        const option = this._findOptionRecursive(this.options, name);
         return option?.value as number | undefined;
     }
 
@@ -108,7 +135,7 @@ class InteractionOptions {
      * @returns The boolean value of the option, or undefined if not found.
      */
     public getBoolean(name: string): boolean | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.BOOLEAN);
+        const option = this._findOptionRecursive(this.options, name);
         return option?.value as boolean | undefined;
     }
 
@@ -117,11 +144,28 @@ class InteractionOptions {
      * @param name The name of the user option.
      * @returns The User object, or undefined if not found.
      */
-    public getUser(name: string): User | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.USER);
-        if (!option?.value || !this.resolved?.users) return undefined;
-        const userData = this.resolved.users[option.value as string];
-        return userData ? new User(this.client, userData) : undefined;
+    public async getUser(name: string): Promise<User | undefined> {
+        const option = this._findOptionRecursive(this.options, name);
+        if (!option?.value) return undefined; 
+        
+        const userId = BigInt(option.value as string);
+        let user = this.client.userCache.get(userId);
+        if (user) return user;
+        
+        if (this.resolved?.users && this.resolved.users[option.value as string]) {
+            const userData = this.resolved.users[option.value as string];
+            user = new User(this.client, userData);
+            this.client.userCache.set(user);
+            return user;
+        }
+
+        try {
+            user = await this.client.fetchUser(userId);
+            return user;
+        } catch (error) {
+            console.error(`Failed to retrieve user ${userId} from interaction options:`, error);
+            return undefined;
+        }
     }
 
     /**
@@ -130,16 +174,22 @@ class InteractionOptions {
      * @returns The Member object, or undefined if not found.
      */
     public getMember(name: string): Member | undefined {
-        const option = this.options?.find(opt => (opt.name === name && (opt.type === ApplicationCommandOptionType.USER || opt.type === ApplicationCommandOptionType.MENTIONABLE)));
+        const option = this._findOptionRecursive(this.options, name);
         if (!option?.value || !this.resolved?.members || !this.resolved.users || !this.guildId) return undefined;
 
-        const memberId = option.value as string;
-        const memberData = this.resolved.members[memberId];
-        const userData = this.resolved.users[memberId];
+        const memberId = BigInt(option.value as string);
+        const memberData = this.resolved.members[memberId.toString()];
+        const userData = this.resolved.users[memberId.toString()];
 
         if (memberData && userData) {
-            const fullMemberData = { ...memberData, user: userData };
-            return new Member(this.client, fullMemberData, this.guildId);
+            let user = this.client.userCache.get(memberId);
+            if (!user) {
+                user = new User(this.client, userData);
+                this.client.userCache.set(user);
+            }
+
+            const fullMemberData = { ...memberData, user: user };
+            return new Member(this.client, fullMemberData, this.guildId.toString());
         }
         return undefined;
     }
@@ -149,11 +199,28 @@ class InteractionOptions {
      * @param name The name of the channel option.
      * @returns The Channel object, or undefined if not found.
      */
-    public getChannel(name: string): Channel | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.CHANNEL);
-        if (!option?.value || !this.resolved?.channels) return undefined;
-        const channelData = this.resolved.channels[option.value as string];
-        return channelData ? new Channel(this.client, channelData) : undefined;
+    public async getChannel(name: string): Promise<Channel | undefined> {
+        const option = this._findOptionRecursive(this.options, name);
+        if (!option?.value) return undefined;
+        
+        const channelId = BigInt(option.value as string);
+        let channel = this.client.channelCache.get(channelId);
+        if (channel) return channel;
+
+        if (this.resolved?.channels && this.resolved.channels[option.value as string]) {
+            const channelData = this.resolved.channels[option.value as string];
+            channel = new Channel(this.client, channelData);
+            this.client.channelCache.set(channel);
+            return channel;
+        }
+
+        try {
+            channel = await this.client.fetchChannel(channelId);
+            return channel;
+        } catch (error) {
+            console.error(`Failed to retrieve channel ${channelId} from interaction options:`, error);
+            return undefined;
+        }
     }
 
     /**
@@ -162,10 +229,14 @@ class InteractionOptions {
      * @returns The Role object, or undefined if not found.
      */
     public getRole(name: string): Role | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.ROLE);
-        if (!option?.value || !this.resolved?.roles) return undefined;
+        const option = this._findOptionRecursive(this.options, name);
+        if (!option?.value || !this.resolved?.roles || !this.guildId) return undefined;
+
+        const roleId = BigInt(option.value as string);
+        // Roles are typically cached per guild, not globally in the client.guildCache
+        // For now we will create a new Role instance
         const roleData = this.resolved.roles[option.value as string];
-        return roleData ? new Role(this.client, roleData, this.guildId || 'unknown') : undefined;
+        return roleData ? new Role(this.client, roleData, this.guildId.toString()) : undefined;
     }
 
     /**
@@ -174,7 +245,7 @@ class InteractionOptions {
      * @returns The mentionable ID string of the option, or undefined if not found.
      */
     public getMentionable(name: string): string | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.MENTIONABLE);
+        const option = this._findOptionRecursive(this.options, name);
         return option?.value as string | undefined;
     }
 
@@ -184,18 +255,38 @@ class InteractionOptions {
      * @returns The number value of the option, or undefined if not found.
      */
     public getNumber(name: string): number | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.NUMBER);
+        const option = this._findOptionRecursive(this.options, name);
         return option?.value as number | undefined;
     }
 
     /**
-     * Retrieves the value of a subcommand option.
-     * @param name The name of the option.
-     * @returns The subcommand object, or undefined if not found.
+     * Retrieves the ID of a channel option as a BigInt.
+     * @param name The name of the channel option.
+     * @returns The BigInt ID of the channel, or undefined if not found.
      */
-    public getSubcommand(name: string): any | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.SUB_COMMAND);
-        return option;
+    public async getChannelId(name: string): Promise<bigint | undefined> {
+        const channel = await this.getChannel(name);
+        return channel?.id;
+    }
+
+    /**
+     * Retrieves the ID of a user option as a BigInt.
+     * @param name The name of the user option.
+     * @returns The BigInt ID of the user, or undefined if not found.
+     */
+    public async getUserId(name: string): Promise<bigint | undefined> {
+        const user = await this.getUser(name);
+        return user?.id;
+    }
+
+    /**
+     * Retrieves the value of a subcommand option.
+     * @param {string} [name] The name of the subcommand option. If omitted, returns the name of the top-level subcommand.
+     * @returns {string | undefined} The subcommand name, or undefined if not found.
+     */
+    public getSubcommand(name?: string): string | undefined {
+        const subcommandOption = this.options?.find(opt => opt.type === ApplicationCommandOptionType.SUB_COMMAND || opt.type === ApplicationCommandOptionType.SUB_COMMAND_GROUP);
+        return subcommandOption ? subcommandOption.name : undefined;
     }
 
     /**
@@ -204,8 +295,8 @@ class InteractionOptions {
      * @returns The subcommand group object, or undefined if not found.
      */
     public getSubcommandGroup(name: string): any | undefined {
-        const option = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.SUB_COMMAND_GROUP);
-        return option;
+        const groupOption = this.options?.find(opt => opt.name === name && opt.type === ApplicationCommandOptionType.SUB_COMMAND_GROUP);
+        return groupOption;
     }
 }
 
@@ -213,19 +304,19 @@ class InteractionOptions {
  * Represents a Discord interaction.
  */
 export class Interaction {
-    public id: string;
-    public applicationId: string;
+    public id: bigint;
+    public applicationId: bigint;
     public type: InteractionType;
     public data?: ApplicationCommandInteractionData;
-    public guildId?: string;
-    public channelId?: string;
+    public guildId?: bigint;
+    public channelId?: bigint;
     public member?: Member;
-    public user: User;
+    public user?: User;
     public token: string;
     public version: number;
     public message?: Message;
 
-    private client: Client;
+    private _client: Client;
 
     /**
      * Creates an instance of Interaction.
@@ -233,18 +324,43 @@ export class Interaction {
      * @param {InteractionPayload} data The raw interaction payload.
      */
     constructor(client: Client, data: InteractionPayload) {
-        this.client = client;
-        this.id = data.id;
-        this.applicationId = data.application_id;
+        this._client = client;
+        this.id = BigInt(data.id);
+        this.applicationId = BigInt(data.application_id);
         this.type = data.type;
         this.data = data.data;
-        this.guildId = data.guild_id;
-        this.channelId = data.channel_id;
-        this.member = data.member;
-        this.user = data.user;
+        this.guildId = data.guild_id ? BigInt(data.guild_id) : undefined;
+        this.channelId = data.channel_id ? BigInt(data.channel_id) : undefined;
         this.token = data.token;
         this.version = data.version;
-        this.message = data.message ? new Message(client, data.message) : undefined;
+
+        if (data.user) {
+            let user = this._client.userCache.get(BigInt(data.user.id));
+            if (!user) {
+                user = new User(this._client, data.user);
+                this._client.userCache.set(user);
+            }
+            this.user = user;
+        } else {
+            this.user = undefined;
+        }
+
+        if (data.member) {
+            this.member = new Member(this._client, data.member, this.guildId!.toString());
+        }
+
+        this.message = data.message ? new Message(this._client, data.message) : undefined;
+        if (this.message) {
+            this._client.messages.set(this.message);
+        }
+    }
+
+    /**
+     * Public getter for the client instance.
+     * @returns {Client} The client instance.
+     */
+    public get client(): Client {
+        return this._client;
     }
 
     /**
@@ -253,17 +369,29 @@ export class Interaction {
      */
     public get channel(): Channel | undefined {
         if (!this.channelId) return undefined;
-        if (this.data?.resolved?.channels && this.data.resolved.channels[this.channelId]) {
-            return new Channel(this.client, this.data.resolved.channels[this.channelId]);
+
+        let channel = this._client.channelCache.get(this.channelId);
+        if (channel) {
+            return channel;
         }
-        return new Channel(this.client, { id: this.channelId, type: ChannelType.GUILD_TEXT }); // Fallback if not resolved
+
+        if (this.data?.resolved?.channels && this.data.resolved.channels[this.channelId.toString()]) {
+            channel = new Channel(this._client, this.data.resolved.channels[this.channelId.toString()]);
+            this._client.channelCache.set(channel);
+            return channel;
+        }
+        // I'm still thiking about returning the most needed data from a channel if cache fails, but for now, return the half full object 
+
+        channel = new Channel(this._client, { id: this.channelId.toString(), type: ChannelType.GUILD_TEXT, guild_id: this.guildId?.toString() });
+        this._client.channelCache.set(channel);
+        return channel;
     }
 
     /**
      * Access to command options.
      */
     public get options(): InteractionOptions {
-        return new InteractionOptions(this.client, this.data?.options, this.data?.resolved, this.guildId);
+        return new InteractionOptions(this._client, this.data?.options, this.data?.resolved, this.guildId?.toString()); // Pass guildId as string to InteractionOptions
     }
 
     /**
@@ -302,9 +430,9 @@ export class Interaction {
             }
         }
 
-        await this.client.rest.request(
+        await this._client.rest.request(
             'POST',
-            INTERACTION_CALLBACK(this.id, this.token),
+            INTERACTION_CALLBACK(this.id.toString(), this.token),
             {
                 type: 4,
                 data: {
@@ -337,9 +465,9 @@ export class Interaction {
             }
         }
 
-        await this.client.rest.request(
+        await this._client.rest.request(
             'POST',
-            INTERACTION_CALLBACK(this.id, this.token),
+            INTERACTION_CALLBACK(this.id.toString(), this.token),
             {
                 type: 7,
                 data: {

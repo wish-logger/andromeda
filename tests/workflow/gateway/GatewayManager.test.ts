@@ -151,7 +151,7 @@ describe('GatewayManager', () => {
     messageHandler(JSON.stringify(readyPayload));
 
     expect(client.user).toBeDefined();
-    expect(client.user.id).toBe('123456789012345679'); // Changed from 'user1' to a numeric string
+    expect(client.user.id).toBe(123456789012345679n);
     expect(client.user.username).toBe('TestUser');
     expect((gatewayManager as any).sessionId).toBe('mock_session_id');
   });

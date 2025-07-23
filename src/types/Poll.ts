@@ -42,7 +42,7 @@ export interface PollResults {
  * Represents a Discord Poll object.
  */
 export interface Poll {
-    id: string;
+    id: bigint;
     question: PollMedia;
     answers: PollAnswer[];
     results: PollResults;

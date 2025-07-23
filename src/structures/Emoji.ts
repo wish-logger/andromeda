@@ -2,7 +2,7 @@ import { Client } from '../client/Client';
 import { User } from '../structures/User';
 
 export class Emoji {
-    public id: string | null;
+    public id: bigint | null;
     public name: string | null;
     public animated?: boolean;
     public available?: boolean;
@@ -15,7 +15,7 @@ export class Emoji {
 
     constructor(client: Client, data: any) {
         this.client = client;
-        this.id = data.id;
+        this.id = data.id ? BigInt(data.id) : null;
         this.name = data.name;
         this.animated = data.animated;
         this.available = data.available;
@@ -33,7 +33,7 @@ export class Emoji {
      */
     public imageURL(format: string = 'png', size: number = 128): string | null {
         if (!this.id) return null;
-        return `https://cdn.discordapp.com/emojis/${this.id}.${this.animated ? 'gif' : format}?size=${size}`;
+        return `https://cdn.discordapp.com/emojis/${this.id.toString()}.${this.animated ? 'gif' : format}?size=${size}`;
     }
 
     /**
@@ -41,7 +41,7 @@ export class Emoji {
      * @returns {string}
      */
     public toString(): string {
-        return this.id ? `<${this.animated ? 'a' : ''}:${this.name}:${this.id}>` : this.name || '';
+        return this.id ? `<${this.animated ? 'a' : ''}:${this.name}:${this.id.toString()}>` : this.name || '';
     }
 
     /**
@@ -50,7 +50,7 @@ export class Emoji {
      */
     public toJSON(): object {
         return {
-            id: this.id,
+            id: this.id?.toString() || null,
             name: this.name,
             animated: this.animated,
             available: this.available,

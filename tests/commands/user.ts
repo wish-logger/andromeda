@@ -12,7 +12,7 @@ module.exports = {
         ),
     async execute(interaction: Interaction) {
 
-        const user = interaction.options.getUser('user')
+        const user = await interaction.options.getUser('user')
 
         if (!user) {
             await interaction.reply({ content: 'Could not find user information.', ephemeral: true });
@@ -32,7 +32,7 @@ module.exports = {
         );
 
         if (user.avatarURL()) {
-            embed.setThumbnail(user.avatarURL()!);
+            embed.setThumbnail(user.displayAvatarURL());
         }
 
         await interaction.reply({ embeds: [embed], ephemeral: true });

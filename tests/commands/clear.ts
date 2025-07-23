@@ -27,15 +27,10 @@ module.exports = {
         if (amount) {
             if (interaction.channel) {
 
-                const messages = await interaction.channel.fetchMessages(amount); // for now fetch messages, later I'll add a caching system
-                const messageIds = messages.map(msg => msg.id);
 
-                if (messageIds.length > 0) {
-                    await interaction.channel.bulkDelete(messageIds);
-                    await interaction.reply({ content: `You've cleared ${messageIds.length} message(s).`, ephemeral: true });
-                } else {
-                    await interaction.reply({ content: 'No messages found to clear.', ephemeral: true });
-                }
+                await interaction.channel.bulkDelete({ amount: amount });
+                await interaction.reply({ content: `You've cleared ${amount} message(s).`, ephemeral: true });
+
             } else {
                 await interaction.reply({ content: 'Could not find the channel for bulk deletion.', ephemeral: true });
             }

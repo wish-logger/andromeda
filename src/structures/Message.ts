@@ -7,7 +7,7 @@ import { Poll, PollAnswer, PollMedia, PollResults, PollAnswerCount, PollLayoutTy
 import { ComponentV2Type, ComponentV2Union, ContainerComponent, SectionComponent, TextDisplayComponent, MediaGalleryComponent, SeparatorComponent, ActionRowComponent, ButtonComponent, StringSelectComponent } from '../types/ComponentV2'; // Import V2 types
 
 export interface MessageAttachment {
-    id: string;
+    id: BigInt;
     filename: string;
     description?: string;
     contentType?: string;
@@ -70,16 +70,16 @@ export interface MessageReaction {
     count: number;
     me: boolean;
     emoji: {
-        id?: string;
+        id?: BigInt;
         name: string;
         animated?: boolean;
     };
 }
 
 export interface MessageReference {
-    messageId?: string;
-    channelId?: string;
-    guildId?: string;
+    messageId?: BigInt;
+    channelId?: BigInt;
+    guildId?: BigInt;
     failIfNotExists?: boolean;
 }
 
@@ -89,7 +89,7 @@ export interface MessageActivity {
 }
 
 export interface MessageApplication {
-    id: string;
+    id: BigInt;
     coverImage?: string;
     description: string;
     icon?: string;
@@ -97,7 +97,7 @@ export interface MessageApplication {
 }
 
 export interface MessageInteraction {
-    id: string;
+    id: BigInt;
     type: number;
     name: string;
     user: User;
@@ -110,7 +110,7 @@ export interface MessageComponent {
     style?: number;
     label?: string;
     emoji?: {
-        id?: string;
+        id?: BigInt;
         name?: string;
         animated?: boolean;
     };
@@ -125,7 +125,7 @@ export interface MessageComponent {
         value: string;
         description?: string;
         emoji?: {
-            id?: string;
+            id?: BigInt;
             name?: string;
             animated?: boolean;
         };
@@ -134,8 +134,8 @@ export interface MessageComponent {
 }
 
 export interface MessageSticker {
-    id: string;
-    packId?: string;
+    id: BigInt;
+    packId?: BigInt;
     name: string;
     description?: string;
     tags: string;
@@ -143,7 +143,7 @@ export interface MessageSticker {
     type: number;
     formatType: number;
     available?: boolean;
-    guildId?: string;
+    guildId?: BigInt;
     user?: User;
     sortValue?: number;
 }
@@ -443,29 +443,39 @@ export class Message {
         this.mentions = (data.mentions ?? []).map((user: any) => new User(client, user));
         this.mentionRoles = data.mention_roles ?? [];
         this.mentionChannels = data.mention_channels ?? [];
-        this.attachments = data.attachments ?? [];
+        this.attachments = (data.attachments ?? []).map((att: any) => ({ ...att, id: BigInt(att.id) }));
         this.embeds = data.embeds ?? [];
-        this.reactions = data.reactions ?? [];
+        this.reactions = (data.reactions ?? []).map((r: any) => ({ ...r, emoji: { ...r.emoji, id: r.emoji.id ? BigInt(r.emoji.id) : undefined } }));
         this.nonce = data.nonce ?? null;
         this.pinned = data.pinned ?? false;
         this.webhookId = data.webhook_id ?? null;
         this.activity = data.activity ?? null;
-        this.application = data.application ?? null;
+        this.application = data.application ? { ...data.application, id: BigInt(data.application.id) } : null;
         this.applicationId = data.application_id ?? null;
-        this.messageReference = data.message_reference ?? null;
+        this.messageReference = data.message_reference ? {
+            messageId: data.message_reference.message_id ? BigInt(data.message_reference.message_id) : undefined,
+            channelId: data.message_reference.channel_id ? BigInt(data.message_reference.channel_id) : undefined,
+            guildId: data.message_reference.guild_id ? BigInt(data.message_reference.guild_id) : undefined,
+            failIfNotExists: data.message_reference.fail_if_not_exists
+        } : null;
         this.flags = data.flags ?? null;
         this.referencedMessage = data.referenced_message ? new Message(client, data.referenced_message) : null;
-        this.interaction = data.interaction ?? null;
+        this.interaction = data.interaction ? { ...data.interaction, id: BigInt(data.interaction.id) } : null;
         this.thread = data.thread ?? null;
-        this.components = data.components ?? [];
-        this.stickerItems = data.sticker_items ?? [];
-        this.stickers = data.stickers ?? [];
+        this.components = (data.components ?? []).map((c: any) => this._parseMessageComponent(c));
+        this.stickerItems = (data.sticker_items ?? []).map((s: any) => ({ ...s, id: BigInt(s.id) }));
+        this.stickers = (data.stickers ?? []).map((s: any) => ({
+            ...s,
+            id: BigInt(s.id),
+            packId: s.pack_id ? BigInt(s.pack_id) : undefined,
+            guildId: s.guild_id ? BigInt(s.guild_id) : undefined,
+        }));
         this.position = data.position ?? null;
         this.roleSubscriptionData = data.role_subscription_data ?? null;
         
         if (data.poll) {
             this.poll = {
-                id: data.poll.id,
+                id: BigInt(data.poll.id),
                 question: data.poll.question as PollMedia,
                 answers: data.poll.answers.map((answer: any) => ({ answer_id: answer.answer_id, poll_media: answer.poll_media as PollMedia })) as PollAnswer[],
                 results: {
@@ -543,7 +553,7 @@ export class Message {
                         type: rawComp.type,
                         style: rawComp.style,
                         label: rawComp.label,
-                        emoji: rawComp.emoji,
+                        emoji: rawComp.emoji ? { ...rawComp.emoji, id: rawComp.emoji.id ? BigInt(rawComp.emoji.id) : undefined } : undefined,
                         custom_id: rawComp.custom_id,
                         url: rawComp.url,
                         disabled: rawComp.disabled,
@@ -552,7 +562,10 @@ export class Message {
                     return {
                         type: rawComp.type,
                         custom_id: rawComp.custom_id,
-                        options: rawComp.options,
+                        options: rawComp.options.map((opt: any) => ({
+                            ...opt,
+                            emoji: opt.emoji ? { ...opt.emoji, id: opt.emoji.id ? BigInt(opt.emoji.id) : undefined } : undefined,
+                        })),
                         placeholder: rawComp.placeholder,
                         min_values: rawComp.min_values,
                         max_values: rawComp.max_values,
@@ -563,6 +576,38 @@ export class Message {
                     return rawComp; // Return raw if type is unknown
             }
         });
+    }
+
+    /**
+     * Helper to recursively parse raw Discord Components data into our structured types.
+     * @param rawComponent The raw component object from Discord.
+     * @returns A parsed MessageComponent object.
+     */
+    private _parseMessageComponent(rawComponent: any): MessageComponent {
+        const component: MessageComponent = {
+            type: rawComponent.type,
+            // Common
+            style: rawComponent.style,
+            label: rawComponent.label,
+            emoji: rawComponent.emoji ? { ...rawComponent.emoji, id: rawComponent.emoji.id ? BigInt(rawComponent.emoji.id) : undefined } : undefined,
+            customId: rawComponent.custom_id,
+            url: rawComponent.url,
+            disabled: rawComponent.disabled,
+            // Select menu spe
+            placeholder: rawComponent.placeholder,
+            minValues: rawComponent.min_values,
+            maxValues: rawComponent.max_values,
+            options: rawComponent.options?.map((opt: any) => ({
+                ...opt,
+                emoji: opt.emoji ? { ...opt.emoji, id: opt.emoji.id ? BigInt(opt.emoji.id) : undefined } : undefined,
+            })),
+        };
+
+        if (rawComponent.components) {
+            component.components = rawComponent.components.map((c: any) => this._parseMessageComponent(c));
+        }
+
+        return component;
     }
 
     /**
@@ -640,72 +685,162 @@ export class Message {
 
     /**
      * Edit the message.
-     * @param {string | any} content The new content or edit options.
+     * @param {string | object} content The new content or edit options. Can be string or an object with `content`, `embeds`, `components`, `flags`, `allowed_mentions`.
+     * @param {string} [reason] The reason for editing the message.
      * @returns {Promise<Message>} The edited message.
      */
-    public async edit(content: string | any): Promise<Message> {
-        // This would be implemented with API calls
-        throw new Error('Method not implemented - requires API implementation');
+    public async edit(content: string | object, reason?: string): Promise<Message> {
+        let payload: any;
+
+        if (typeof content === 'string') {
+            payload = { content };
+        } else {
+            payload = content;
+        }
+
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        const response = await this.client.rest.request('PATCH',
+            `/channels/${this.channelId.toString()}/messages/${this.id.toString()}`,
+            payload,
+            headers
+        );
+
+        const editedMessage = new Message(this.client, response);
+        this.client.messages.set(editedMessage); // Update cache
+        return editedMessage;
     }
 
     /**
      * Delete the message.
-     * @param {string} reason Reason for deleting the message.
-     * @returns {Promise<Message>} The deleted message.
+     * @param {string} [reason] Reason for deleting the message.
+     * @returns {Promise<void>}
      */
-    public async delete(reason?: string): Promise<Message> {
-        // This would be implemented with API calls
-        throw new Error('Method not implemented - requires API implementation');
+    public async delete(reason?: string): Promise<void> {
+        const headers: any = {};
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        await this.client.rest.request('DELETE',
+            `/channels/${this.channelId.toString()}/messages/${this.id.toString()}`,
+            undefined,
+            headers
+        );
+
+        this.client.messages.delete(BigInt(this.id));
     }
 
     /**
      * Pin the message.
-     * @param {string} reason Reason for pinning the message.
+     * @param {string} [reason] Reason for pinning the message.
      * @returns {Promise<void>}
      */
     public async pin(reason?: string): Promise<void> {
-        // This would be implemented with API calls
-        throw new Error('Method not implemented - requires API implementation');
+        const headers: any = {};
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        await this.client.rest.request('PUT',
+            `/channels/${this.channelId.toString()}/pins/${this.id.toString()}`,
+            undefined,
+            headers
+        );
+
+        this.pinned = true;
     }
 
     /**
      * Unpin the message.
-     * @param {string} reason Reason for unpinning the message.
+     * @param {string} [reason] Reason for unpinning the message.
      * @returns {Promise<void>}
      */
     public async unpin(reason?: string): Promise<void> {
-        // This would be implemented with API calls
-        throw new Error('Method not implemented - requires API implementation');
+        const headers: any = {};
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        await this.client.rest.request('DELETE',
+            `/channels/${this.channelId.toString()}/pins/${this.id.toString()}`,
+            undefined,
+            headers
+        );
+
+        this.pinned = false;
     }
 
     /**
      * React to the message with an emoji.
-     * @param {string} emoji The emoji to react with.
+     * @param {string} emoji The emoji to react with. Can be a unicode emoji or a custom emoji in the format `name:id`.
      * @returns {Promise<void>}
      */
     public async react(emoji: string): Promise<void> {
-        // This would be implemented with API calls
-        throw new Error('Method not implemented - requires API implementation');
+        const encodedEmoji = encodeURIComponent(emoji);
+        await this.client.rest.request('PUT',
+            `/channels/${this.channelId.toString()}/messages/${this.id.toString()}/reactions/${encodedEmoji}/@me`
+        );
     }
 
     /**
      * Reply to the message.
-     * @param {string | any} content The reply content or options.
+     * @param {string | object} content The reply content or options. Can be string or an object with `content`, `embeds`, `components`, `flags`, `allowed_mentions`, `message_reference`.
      * @returns {Promise<Message>} The reply message.
      */
-    public async reply(content: string | any): Promise<Message> {
-        // This would be implemented with API calls
-        throw new Error('Method not implemented - requires API implementation');
+    public async reply(content: string | object): Promise<Message> {
+        let payload: any;
+
+        if (typeof content === 'string') {
+            payload = { content };
+        } else {
+            payload = content;
+        }
+
+        payload.message_reference = {
+            message_id: this.id.toString(),
+            channel_id: this.channelId.toString(),
+            guild_id: this.guildId?.toString(),
+            fail_if_not_exists: false, // depending on the wanted behavior can also be true
+        };
+
+        const response = await this.client.rest.request('POST',
+            `/channels/${this.channelId.toString()}/messages`,
+            payload
+        );
+        
+        const replyMessage = new Message(this.client, response);
+        this.client.messages.set(replyMessage); // Cache the reply
+        return replyMessage;
     }
 
     /**
      * Create a thread from this message.
-     * @param {any} options Thread creation options.
-     * @returns {Promise<any>} The created thread.
+     * @param {object} options Thread creation options. Requires `name`, `auto_archive_duration`.
+     * @returns {Promise<Thread>} The created thread.
      */
-    public async startThread(options: any): Promise<any> {
-        // This would be implemented with API calls
-        throw new Error('Method not implemented - requires API implementation');
+    public async startThread(options: { name: string; autoArchiveDuration?: number; rateLimitPerUser?: number; }): Promise<any> {
+        if (!this.channelId) {
+            throw new Error('Cannot start a thread without a channel ID.');
+        }
+
+        const payload: any = {
+            name: options.name,
+            auto_archive_duration: options.autoArchiveDuration ?? 1440, // 24 hours
+            rate_limit_per_user: options.rateLimitPerUser,
+        };
+
+        const response = await this.client.rest.request('POST',
+            `/channels/${this.channelId.toString()}/messages/${this.id.toString()}/threads`,
+            payload
+        );
+
+        const ThreadClass = (await import('./Thread')).Thread;
+        const newThread = new ThreadClass(this.client, response);
+        return newThread;
     }
 
     /**
@@ -713,8 +848,17 @@ export class Message {
      * @returns {Promise<Message>} The crossposted message.
      */
     public async crosspost(): Promise<Message> {
-        // This would be implemented with API calls
-        throw new Error('Method not implemented - requires API implementation');
+        if (!this.crosspostable) {
+            throw new Error('Message is not crosspostable or already crossposted).');
+        }
+
+        const response = await this.client.rest.request('POST',
+            `/channels/${this.channelId.toString()}/messages/${this.id.toString()}/crosspost`
+        );
+
+        const crosspostedMessage = new Message(this.client, response);
+        this.client.messages.set(crosspostedMessage);
+        return crosspostedMessage;
     }
 
     /**
@@ -724,6 +868,88 @@ export class Message {
      */
     public async send(content: string | object): Promise<Message> {
         const payload = typeof content === 'string' ? { content } : content;
-        return this.client.rest.request('POST', CHANNEL_MESSAGES(this.channelId), payload);
+        const response = await this.client.rest.request('POST', CHANNEL_MESSAGES(this.channelId.toString()), payload);
+        const newMessage = new Message(this.client, response);
+        this.client.messages.set(newMessage);
+        return newMessage;
+    }
+
+    /**
+     * Forwards this message to another channel.
+     * @param {BigInt} targetChannelId The ID of the channel to forward the message to.
+     * @returns {Promise<Message>} The new message sent in the target channel.
+     */
+    public async forward(targetChannelId: BigInt): Promise<Message> {
+        const payload: any = {
+            content: this.content,
+            tts: this.tts,
+            embeds: this.embeds,
+            attachments: this.attachments.map(att => ({
+                id: att.id.toString(),
+                filename: att.filename,
+                description: att.description,
+                content_type: att.contentType,
+                size: att.size,
+                url: att.url,
+                proxy_url: att.proxyUrl,
+                height: att.height,
+                width: att.width,
+                ephemeral: att.ephemeral,
+            })),
+            components: this.components.map(comp => this._serializeMessageComponent(comp)),
+            sticker_ids: this.stickerItems.map(sticker => sticker.id.toString()),
+        };
+
+        // Try to forward a poll if exists, throw an ANDOROMEDA error if failed 
+        if (this.poll) {
+            try {
+                payload.poll = {
+                    question: this.poll.question,
+                    answers: this.poll.answers.map(ans => ({ answer_id: ans.answer_id, poll_media: ans.poll_media })),
+                    allow_multiselect: this.poll.allow_multiselect,
+                    layout_type: this.poll.layout_type,
+                };
+                if (this.poll.id) {
+                    payload.poll.id = this.poll.id.toString();
+                }
+
+            } catch (error) {
+                console.error('[ANDOROMEDA]: Failed to forward poll data:', error);
+                delete payload.poll; // Remove poll from payload if it failed to process
+            }
+        }
+
+        const response = await this.client.rest.request('POST', `/channels/${targetChannelId.toString()}/messages`, payload);
+        return new Message(this.client, response);
+    }
+
+    /**
+     * Helper to recursively serialize our structured MessageComponent types back to raw Discord format.
+     * @param component The structured MessageComponent object.
+     * @returns The raw Discord component object.
+     */
+    private _serializeMessageComponent(component: MessageComponent): any {
+        const rawComponent: any = {
+            type: component.type,
+            style: component.style,
+            label: component.label,
+            emoji: component.emoji ? { ...component.emoji, id: component.emoji.id?.toString() } : undefined,
+            custom_id: component.customId,
+            url: component.url,
+            disabled: component.disabled,
+            placeholder: component.placeholder,
+            min_values: component.minValues,
+            max_values: component.maxValues,
+            options: component.options?.map((opt: any) => ({
+                ...opt,
+                emoji: opt.emoji ? { ...opt.emoji, id: opt.emoji.id?.toString() } : undefined,
+            })),
+        };
+
+        if (component.components) {
+            rawComponent.components = component.components.map(c => this._serializeMessageComponent(c));
+        }
+
+        return rawComponent;
     }
 }

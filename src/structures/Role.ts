@@ -24,7 +24,7 @@ export interface RoleStyle {
 }
 
 export class Role {
-    public id: string;
+    public id: bigint;
     public name: string;
     public color: number;
     public hoist: boolean;
@@ -35,7 +35,7 @@ export class Role {
     public managed: boolean;
     public mentionable: boolean;
     public tags?: RoleTags;
-    public guildId: string;
+    public guildId: bigint;
     // Enh
     public style?: RoleStyle;
     public enhancedColors?: number[];
@@ -46,7 +46,7 @@ export class Role {
 
     constructor(client: Client, data: any, guildId: string) {
         this.client = client;
-        this.id = data.id;
+        this.id = BigInt(data.id);
         this.name = data.name;
         this.color = data.color;
         this.hoist = data.hoist;
@@ -57,7 +57,7 @@ export class Role {
         this.managed = data.managed;
         this.mentionable = data.mentionable;
         this.tags = data.tags;
-        this.guildId = guildId;
+        this.guildId = BigInt(guildId);
         
         // Enh
         if (data.style) {
@@ -73,7 +73,7 @@ export class Role {
      * @returns {string}
      */
     public toString(): string {
-        return `<@&${this.id}>`;
+        return `<@&${this.id.toString()}>`;
     }
 
     /**
@@ -256,7 +256,7 @@ export class Role {
      * @returns {boolean}
      */
     public isEveryone(): boolean {
-        return this.id === this.guildId;
+        return this.id.toString() === this.guildId.toString();
     }
 
     /**
@@ -296,7 +296,7 @@ export class Role {
      * @returns {Promise<GuildMember[]>}
      */
     public async getMembers(): Promise<any[]> {
-        const guild = await this.client.guilds.fetch(BigInt(this.guildId));
+        const guild = await this.client.guilds.fetch(this.guildId);
         if (!guild) throw new Error('Guild not found');
         
         const members = await guild.members();
@@ -339,7 +339,7 @@ export class Role {
         }
 
         const response = await this.client.rest.request('PATCH',
-            `/guilds/${this.guildId}/roles/${this.id}`,
+            `/guilds/${this.guildId.toString()}/roles/${this.id.toString()}`,
             data, headers
         );
 
@@ -380,8 +380,8 @@ export class Role {
         }
 
         await this.client.rest.request('PATCH',
-            `/guilds/${this.guildId}/roles`,
-            [{ id: this.id, position }],
+            `/guilds/${this.guildId.toString()}/roles`,
+            [{ id: this.id.toString(), position }],
             headers
         );
 
@@ -409,7 +409,7 @@ export class Role {
         }
 
         await this.client.rest.request('DELETE',
-            `/guilds/${this.guildId}/roles/${this.id}`,
+            `/guilds/${this.guildId.toString()}/roles/${this.id.toString()}`,
             undefined,
             headers
         );
@@ -422,7 +422,7 @@ export class Role {
      * @returns {Promise<Role>}
      */
     public async clone(name?: string, reason?: string): Promise<Role> {
-        const guild = await this.client.guilds.fetch(BigInt(this.guildId));
+        const guild = await this.client.guilds.fetch(this.guildId);
         if (!guild) throw new Error('Guild not found');
 
         return await guild.createRole({
@@ -465,7 +465,7 @@ export class Role {
      */
     public toJSON(): object {
         return {
-            id: this.id,
+            id: this.id.toString(),
             name: this.name,
             color: this.color,
             hoist: this.hoist,
@@ -476,7 +476,7 @@ export class Role {
             managed: this.managed,
             mentionable: this.mentionable,
             tags: this.tags,
-            guildId: this.guildId,
+            guildId: this.guildId.toString(),
             style: this.style,
             enhancedColors: this.enhancedColors,
             gradientDirection: this.gradientDirection,

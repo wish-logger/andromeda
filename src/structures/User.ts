@@ -6,9 +6,9 @@ import { Client } from '../client/Client';
 export class User {
     /**
      * The user's ID.
-     * @type {string}
+     * @type {bigint}
      */
-    public id: string;
+    public id: bigint;
     
     /**
      * The user's username.
@@ -18,9 +18,9 @@ export class User {
     
     /**
      * The user's 4-digit Discord tag (only for bots).
-     * @type {string | null}
+     * @type {string}
      */
-    public discriminator: string | null;
+    public discriminator: string;
     
     /**
      * The user's display name (global display name).
@@ -124,15 +124,18 @@ export class User {
      */
     public primaryGuild: object | null;
 
+    private client: Client;
+
     /**
      * Creates a new User instance.
      * @param {Client} client The client instance.
      * @param {any} data The raw user data from Discord.
      */
     constructor(client: Client, data: any) {
-        this.id = data.id;
+        this.client = client;
+        this.id = BigInt(data.id);
         this.username = data.username;
-        this.discriminator = data.discriminator ?? null;
+        this.discriminator = data.discriminator ?? '';
         this.globalName = data.global_name ?? null;
         this.avatar = data.avatar ?? null;
         this.banner = data.banner ?? null;
@@ -151,6 +154,9 @@ export class User {
         this.createdAt = new Date(Number(snowflakeTimestamp) + 1420070400000);
         this.collectibles = data.collectibles ?? null
         this.primaryGuild = data.primary_guild ?? null
+        if (this.client.userCache) {
+            this.client.userCache.set(this);
+        }
     }
 
     /**
@@ -170,7 +176,7 @@ export class User {
     }
 
     /**
-     * Gets the user's avatar URL.
+     * Returns the URL of the user's avatar.
      * @param {Object} options Options for the avatar URL.
      * @param {string} options.format The format of the avatar (png, jpg, jpeg, webp, gif).
      * @param {number} options.size The size of the avatar (16, 32, 64, 128, 256, 512, 1024, 2048, 4096).
@@ -202,17 +208,19 @@ export class User {
     }
 
     /**
-     * Gets the user's default avatar URL.
-     * @returns {string} The default avatar URL.
+     * Returns the URL of the user's avatar, or their default avatar if they don't have one.
+     * @param {string} [format='png'] The format of the avatar (e.g., 'png', 'jpg', 'webp', 'gif').
+     * @param {number} [size=1024] The size of the avatar (any power of 2 between 16 and 4096).
+     * @returns {string}
      */
     public defaultAvatarURL(): string {
         // New system uses user ID modulo 6 for default avatars
-        const index = (parseInt(this.id) >>> 22) % 6;
+        const index = Number(this.id >> 22n) % 6;
         return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
     }
 
     /**
-     * Gets the user's avatar or default avatar URL.
+     * Returns the URL of the user's avatar, or their default avatar if they don't have one.
      * @param {Object} options Options for the avatar URL.
      * @returns {string} The avatar URL or default avatar URL.
      */
@@ -221,10 +229,43 @@ export class User {
     }
 
     /**
-     * Returns the user as a mention string.
-     * @returns {string} The user mention.
+     * Returns a mention string for the user.
+     * @returns {string}
      */
     public toString(): string {
-        return `<@${this.id}>`;
+        return `<@${this.id.toString()}>`;
+    }
+
+    /**
+     * Returns a serializable object representation of the user.
+     * @returns {object}
+     */
+    public toJSON(): object {
+        return {
+            id: this.id.toString(),
+            username: this.username,
+            discriminator: this.discriminator,
+            globalName: this.globalName,
+            avatar: this.avatar,
+            bot: this.bot,
+            system: this.system,
+            mfaEnabled: this.mfaEnabled,
+            banner: this.banner,
+            accentColor: this.accentColor,
+            locale: this.locale,
+            verified: this.verified,
+            email: this.email,
+            flags: this.flags,
+            premiumType: this.premiumType,
+            publicFlags: this.publicFlags,
+        };
+    }
+
+    /**
+     * Returns a formatted string representation of the user.
+     * @returns {string}
+     */
+    public inspect(): string {
+        return `User { id: '${this.id}', username: '${this.username}' }`;
     }
 }

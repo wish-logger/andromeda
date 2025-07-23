@@ -89,7 +89,7 @@ export class ModuleManager {
         }
 
         if (registeredCommand.id) {
-            await this.client.deleteGlobalCommand(registeredCommand.id);
+            await this.client.deleteGlobalCommand(BigInt(registeredCommand.id));
         }
 
         this.registeredCommands.delete(name);

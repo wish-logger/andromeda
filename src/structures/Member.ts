@@ -87,7 +87,7 @@ export class Member {
      * The guild ID this member belongs to.
      * @type {string}
      */
-    public guildId: string;
+    public guildId: bigint;
 
     /**
      * Creates a new Member instance.
@@ -109,7 +109,14 @@ export class Member {
         this.pending = data.pending ?? false;
         this.permissions = data.permissions ?? null;
         this.communicationDisabledUntil = data.communication_disabled_until ? new Date(data.communication_disabled_until) : null;
-        this.guildId = guildId;
+        this.guildId = BigInt(guildId);
+
+        let user = client.userCache.get(BigInt(data.user.id));
+        if (!user) {
+            user = new User(client, data.user);
+            client.userCache.set(user);
+        }
+        this.user = user;
     }
 
     /**
@@ -193,7 +200,7 @@ export class Member {
         const format = options.format || 'png';
         const size = options.size ? `?size=${options.size}` : '';
         
-        return `https://cdn.discordapp.com/guilds/${this.guildId}/users/${this.user.id}/avatars/${this.avatar}.${format}${size}`;
+        return `https://cdn.discordapp.com/guilds/${this.guildId.toString()}/users/${this.user.id.toString()}/avatars/${this.avatar}.${format}${size}`;
     }
 
     /**
@@ -210,7 +217,7 @@ export class Member {
      * @returns {string} The member mention.
      */
     public toString(): string {
-        return `<@${this.user.id}>`;
+        return `<@${this.user.id.toString()}>`;
     }
 
     /**
@@ -226,33 +233,33 @@ export class Member {
 
     /**
      * Add a role to the member.
-     * @param {string} roleId The role ID to add.
+     * @param {bigint} roleId The role ID to add.
      * @param {string} reason Reason for adding the role.
      * @returns {Promise<Member>} The updated member.
      */
-    public async addRole(roleId: string, reason?: string): Promise<Member> {
+    public async addRole(roleId: bigint, reason?: string): Promise<Member> {
         // This would be implemented with API calls
         throw new Error('Method not implemented - requires API implementation');
     }
 
     /**
      * Remove a role from the member.
-     * @param {string} roleId The role ID to remove.
+     * @param {bigint} roleId The role ID to remove.
      * @param {string} reason Reason for removing the role.
      * @returns {Promise<Member>} The updated member.
      */
-    public async removeRole(roleId: string, reason?: string): Promise<Member> {
+    public async removeRole(roleId: bigint, reason?: string): Promise<Member> {
         // This would be implemented with API calls
         throw new Error('Method not implemented - requires API implementation');
     }
 
     /**
      * Set the member's roles.
-     * @param {string[]} roles Array of role IDs.
+     * @param {bigint[]} roles Array of role IDs.
      * @param {string} reason Reason for the change.
      * @returns {Promise<Member>} The updated member.
      */
-    public async setRoles(roles: string[], reason?: string): Promise<Member> {
+    public async setRoles(roles: bigint[], reason?: string): Promise<Member> {
         // This would be implemented with API calls
         throw new Error('Method not implemented - requires API implementation');
     }
@@ -312,11 +319,11 @@ export class Member {
 
     /**
      * Move the member to a different voice channel.
-     * @param {string} channelId The voice channel ID to move to.
+     * @param {bigint} channelId The voice channel ID to move to.
      * @param {string} reason Reason for the move.
      * @returns {Promise<Member>} The updated member.
      */
-    public async setVoiceChannel(channelId: string, reason?: string): Promise<Member> {
+    public async setVoiceChannel(channelId: bigint, reason?: string): Promise<Member> {
         // This would be implemented with API calls
         throw new Error('Method not implemented - requires API implementation');
     }
@@ -344,10 +351,10 @@ export class Member {
 
     /**
      * Check if the member has a specific permission.
-     * @param {string | bigint} permission The permission to check.
+     * @param {bigint} permission The permission to check.
      * @returns {boolean} Whether the member has the permission.
      */
-    public hasPermission(permission: string | bigint): boolean {
+    public hasPermission(permission: bigint): boolean {
         // This would need complex permission calculation
         // For now, return false
         return false;
@@ -355,19 +362,19 @@ export class Member {
 
     /**
      * Check if the member has any of the specified permissions.
-     * @param {(string | bigint)[]} permissions The permissions to check.
+     * @param {bigint[]} permissions The permissions to check.
      * @returns {boolean} Whether the member has any of the permissions.
      */
-    public hasAnyPermission(permissions: (string | bigint)[]): boolean {
+    public hasAnyPermission(permissions: bigint[]): boolean {
         return permissions.some(permission => this.hasPermission(permission));
     }
 
     /**
      * Check if the member has all of the specified permissions.
-     * @param {(string | bigint)[]} permissions The permissions to check.
+     * @param {bigint[]} permissions The permissions to check.
      * @returns {boolean} Whether the member has all of the permissions.
      */
-    public hasAllPermissions(permissions: (string | bigint)[]): boolean {
+    public hasAllPermissions(permissions: bigint[]): boolean {
         return permissions.every(permission => this.hasPermission(permission));
     }
 }

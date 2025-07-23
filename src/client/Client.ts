@@ -7,6 +7,10 @@ import { InteractionManager } from '../managers/InteractionManager';
 import { ApplicationCommand, ApplicationCommandData } from '../types/ApplicationCommand';
 import { ModuleManager } from '../managers/ModuleManager';
 import { GuildManager } from '../managers/GuildManager';
+import { MessageCacheManager } from '../managers/Cache/MessageCacheManager';
+import { GuildCacheManager } from '../managers/Cache/GuildCacheManager';
+import { ChannelCacheManager } from '../managers/Cache/ChannelCacheManager';
+import { UserCacheManager } from '../managers/Cache/UserCacheManager';
 import { ClientOptions, GatewayIntentBits } from '../types/Intents';
 import {
     APPLICATION_COMMANDS,
@@ -96,6 +100,30 @@ export class Client extends EventEmitter {
     public guilds: GuildManager;
 
     /**
+     * Manages the message cache.
+     * @type {MessageCacheManager}
+     */
+    public messages: MessageCacheManager;
+
+    /**
+     * Manages the guild cache.
+     * @type {GuildCacheManager}
+     */
+    public guildCache: GuildCacheManager;
+
+    /**
+     * Manages the channel cache.
+     * @type {ChannelCacheManager}
+     */
+    public channelCache: ChannelCacheManager;
+
+    /**
+     * Manages the user cache.
+     * @type {UserCacheManager}
+     */
+    public userCache: UserCacheManager;
+
+    /**
      * Creates a new instance of the Discord client.
      * @param {ClientOptions} [options] Options for the client.
      */
@@ -109,6 +137,10 @@ export class Client extends EventEmitter {
         this.interactions = new InteractionManager(this);
         this.modules = new ModuleManager(this);
         this.guilds = new GuildManager(this);
+        this.messages = new MessageCacheManager(this);
+        this.guildCache = new GuildCacheManager(this);
+        this.channelCache = new ChannelCacheManager(this);
+        this.userCache = new UserCacheManager(this);
     }
 
     /**
@@ -174,22 +206,22 @@ export class Client extends EventEmitter {
      */
     public async registerGlobalCommand(command: ApplicationCommandData): Promise<ApplicationCommand> {
         if (!this.user) {
-            throw new Error('Client user not available. Log in first.');
+            await this.$fetchCurrentUser();
         }
-        return this.rest.request('POST', APPLICATION_COMMANDS(this.user.id), command);
+        return this.rest.request('POST', APPLICATION_COMMANDS(this.user.id.toString()), command);
     }
 
     /**
      * Registers a guild-specific application command.
-     * @param {string} guildId The ID of the guild.
+     * @param {bigint} guildId The ID of the guild.
      * @param {ApplicationCommandData} command The command data.
      * @returns {Promise<ApplicationCommand>} The registered command data.
      */
-    public async registerGuildCommand(guildId: string, command: ApplicationCommandData): Promise<ApplicationCommand> {
+    public async registerGuildCommand(guildId: bigint, command: ApplicationCommandData): Promise<ApplicationCommand> {
         if (!this.user) {
-            throw new Error('Client user not available. Log in first.');
+            await this.$fetchCurrentUser();
         }
-        return this.rest.request('POST', GUILD_APPLICATION_COMMANDS(this.user.id, guildId), command);
+        return this.rest.request('POST', GUILD_APPLICATION_COMMANDS(this.user.id.toString(), guildId.toString()), command);
     }
 
     /**
@@ -198,45 +230,131 @@ export class Client extends EventEmitter {
      */
     public async fetchGlobalCommands(): Promise<ApplicationCommand[]> {
         if (!this.user) {
-            throw new Error('Client user not available. Log in first.');
+            await this.$fetchCurrentUser();
         }
-        return this.rest.request('GET', APPLICATION_COMMANDS(this.user.id));
+        return this.rest.request('GET', APPLICATION_COMMANDS(this.user.id.toString()));
     }
 
     /**
      * Fetches all guild-specific application commands.
-     * @param {string} guildId The ID of the guild.
+     * @param {bigint} guildId The ID of the guild.
      * @returns {Promise<ApplicationCommand[]>} An array of guild command data.
      */
-    public async fetchGuildCommands(guildId: string): Promise<ApplicationCommand[]> {
+    public async fetchGuildCommands(guildId: bigint): Promise<ApplicationCommand[]> {
         if (!this.user) {
-            throw new Error('Client user not available. Log in first.');
+            await this.$fetchCurrentUser();
         }
-        return this.rest.request('GET', GUILD_APPLICATION_COMMANDS(this.user.id, guildId));
+        return this.rest.request('GET', GUILD_APPLICATION_COMMANDS(this.user.id.toString(), guildId.toString()));
     }
 
     /**
      * Deletes a global application command.
-     * @param {string} commandId The ID of the command to delete.
+     * @param {bigint} commandId The ID of the command to delete.
      * @returns {Promise<void>}
      */
-    public async deleteGlobalCommand(commandId: string): Promise<void> {
+    public async deleteGlobalCommand(commandId: bigint): Promise<void> {
         if (!this.user) {
-            throw new Error('Client user not available. Log in first.');
+            await this.$fetchCurrentUser();
         }
-        await this.rest.request('DELETE', APPLICATION_COMMAND(this.user.id, commandId));
+        await this.rest.request('DELETE', APPLICATION_COMMAND(this.user.id.toString(), commandId.toString()));
     }
 
     /**
      * Deletes a guild-specific application command.
-     * @param {string} guildId The ID of the guild.
-     * @param {string} commandId The ID of the command to delete.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {bigint} commandId The ID of the command to delete.
      * @returns {Promise<void>}
      */
-    public async deleteGuildCommand(guildId: string, commandId: string): Promise<void> {
+    public async deleteGuildCommand(guildId: bigint, commandId: bigint): Promise<void> {
         if (!this.user) {
-            throw new Error('Client user not available. Log in first.');
+            await this.$fetchCurrentUser();
         }
-        await this.rest.request('DELETE', GUILD_APPLICATION_COMMAND(this.user.id, guildId, commandId));
+        await this.rest.request('DELETE', GUILD_APPLICATION_COMMAND(this.user.id.toString(), guildId.toString(), commandId.toString()));
+    }
+
+    /**
+     * Fetches the current user (the bot itself) and caches it.
+     * @private
+     */
+    private async $fetchCurrentUser(): Promise<void> {
+        if (this.user) {
+            return;
+        }
+        const userData = await this.rest.request('GET', '/users/@me');
+        this.user = new User(this, userData);
+        this.userCache.set(this.user);
+    }
+
+    /**
+     * Fetches a channel by its ID, prioritizing the cache.
+     * @param {bigint} channelId The ID of the channel to fetch.
+     * @returns {Promise<Channel | undefined>} The Channel object, or undefined if not found.
+     */
+    public async fetchChannel(channelId: bigint): Promise<any | undefined> {
+        let channel = this.channelCache.get(channelId);
+        if (channel) {
+            return channel;
+        }
+
+        try {
+            const channelData = await this.rest.request('GET', `/channels/${channelId.toString()}`);
+            channel = new (await import('../structures/Channel')).Channel(this, channelData);
+            this.channelCache.set(channel);
+            return channel;
+        } catch (error) {
+            console.error(`Failed to fetch channel ${channelId}:`, error);
+            return undefined;
+        }
+    }
+
+    /**
+     * Fetches a user by its ID, prioritizing the cache.
+     * @param {bigint} userId The ID of the user to fetch.
+     * @returns {Promise<User | undefined>} The User object, or undefined if not found.
+     */
+    public async fetchUser(userId: bigint): Promise<User | undefined> {
+        let user = this.userCache.get(userId);
+        if (user) {
+            return user;
+        }
+
+        try {
+            const userData = await this.rest.request('GET', `/users/${userId.toString()}`);
+            user = new User(this, userData);
+            this.userCache.set(user);
+            return user;
+        } catch (error) {
+            console.error(`Failed to fetch user ${userId}:`, error);
+            return undefined;
+        }
+    }
+
+    /**
+     * Fetches a role by its ID from a specific guild, prioritizing the guild's cache.
+     * @param {bigint} guildId The ID of the guild the role belongs to.
+     * @param {bigint} roleId The ID of the role to fetch.
+     * @returns {Promise<Role | undefined>} The Role object, or undefined if not found.
+     */
+    public async fetchRole(guildId: bigint, roleId: bigint): Promise<any | undefined> {
+
+        const guild = this.guildCache.get(guildId);
+        if (guild) {
+            const role = guild.roles.get(roleId);
+            if (role) return role;
+        }
+
+        try {
+            const roleData = await this.rest.request('GET', `/guilds/${guildId.toString()}/roles/${roleId.toString()}`);
+            const RoleClass = (await import('../structures/Role')).Role;
+            const role = new RoleClass(this, roleData, guildId.toString());
+            
+            if (guild) {
+                guild.roles.set(role.id, role);
+            }
+            return role;
+        } catch (error) {
+            console.error(`Failed to fetch role ${roleId} from guild ${guildId}:`, error);
+            return undefined;
+        }
     }
 }

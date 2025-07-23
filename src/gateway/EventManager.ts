@@ -30,7 +30,12 @@ export class EventManager {
 
         // Special handling for READY event to set client.user and session_id
         if (eventName === 'ready') {
-            this.client.user = new User(this.client, d.user);
+            let user = this.client.userCache.get(BigInt(d.user.id));
+            if (!user) {
+                user = new User(this.client, d.user);
+                this.client.userCache.set(user);
+            }
+            this.client.user = user;
             // This sessionId is handled by GatewayManager, but we pass it for context if needed.
             // The GatewayManager will explicitly store this.sessionId on its own.
         }
