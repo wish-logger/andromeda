@@ -6,6 +6,7 @@ import { RestManager } from '../rest/RestManager';
 import { InteractionManager } from '../managers/InteractionManager';
 import { ApplicationCommand, ApplicationCommandData } from '../types/ApplicationCommand';
 import { ModuleManager } from '../managers/ModuleManager';
+import { GuildManager } from '../managers/GuildManager';
 import { ClientOptions, GatewayIntentBits } from '../types/Intents';
 import {
     APPLICATION_COMMANDS,
@@ -89,6 +90,12 @@ export class Client extends EventEmitter {
     public user!: User;
 
     /**
+     * Manages Discord guilds.
+     * @type {GuildManager}
+     */
+    public guilds: GuildManager;
+
+    /**
      * Creates a new instance of the Discord client.
      * @param {ClientOptions} [options] Options for the client.
      */
@@ -101,6 +108,7 @@ export class Client extends EventEmitter {
         this.rest = new RestManager(this);
         this.interactions = new InteractionManager(this);
         this.modules = new ModuleManager(this);
+        this.guilds = new GuildManager(this);
     }
 
     /**
