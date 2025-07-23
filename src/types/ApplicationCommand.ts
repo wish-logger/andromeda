@@ -1,5 +1,5 @@
 import { LocalizationMap } from '../Builders/types/Localization';
-import { ChannelType } from '../structures/Channel';
+import { ChannelType } from '../types/Channel';
 
 /**
  * Represents an application command (slash command) data for registration.

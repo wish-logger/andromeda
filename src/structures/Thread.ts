@@ -1,5 +1,5 @@
 import { Client } from '../client/Client';
-import { Channel, ChannelType } from './Channel';
+import { Channel} from './Channel';
 import { Member } from './Member';
 
 /**
@@ -26,8 +26,8 @@ export class Thread extends Channel {
 
         this.messageCount = data.message_count;
         this.memberCount = data.member_count;
-        this.threadMetadata = data.thread_metadata ? { archived: data.thread_metadata.archived, auto_archive_duration: data.thread_metadata.auto_archive_duration, archive_timestamp: new Date(data.thread_metadata.archive_timestamp), locked: data.thread_metadata.locked, invitable: data.thread_metadata.invitable } : undefined;
-        this.member = data.member ? { id: BigInt(data.member.id), user_id: BigInt(data.member.user_id), join_timestamp: new Date(data.member.join_timestamp), flags: data.member.flags } : undefined;
+        this.threadMetadata = data.thread_metadata ? { archived: data.thread_metadata.archived, autoArchiveDuration: data.thread_metadata.auto_archive_duration, archiveTimestamp: new Date(data.thread_metadata.archive_timestamp), locked: data.thread_metadata.locked, invitable: data.thread_metadata.invitable, createTimestamp: data.thread_metadata.create_timestamp ? new Date(data.thread_metadata.create_timestamp) : undefined } : undefined;
+        this.member = data.member ? { id: BigInt(data.member.id), userId: BigInt(data.member.user_id), joinTimestamp: new Date(data.member.join_timestamp), flags: data.member.flags, member: data.member.member && data.guild_id ? new Member(this.client, data.member.member, data.guild_id.toString()) : undefined } : undefined;
         this.defaultAutoArchiveDuration = data.default_auto_archive_duration;
         this.permissions = data.permissions;
         this.flags = data.flags;
@@ -46,11 +46,11 @@ export class Thread extends Channel {
  */
 export interface ThreadMetadata {
     archived: boolean;
-    auto_archive_duration: number;
-    archive_timestamp: Date;
+    autoArchiveDuration: number;
+    archiveTimestamp: Date;
     locked: boolean;
     invitable?: boolean;
-    create_timestamp?: Date;
+    createTimestamp?: Date;
 }
 
 /**
@@ -58,8 +58,8 @@ export interface ThreadMetadata {
  */
 export interface ThreadMember {
     id?: bigint;
-    user_id?: bigint;
-    join_timestamp: Date;
+    userId?: bigint;
+    joinTimestamp: Date;
     flags: number;
     member?: Member;
 }

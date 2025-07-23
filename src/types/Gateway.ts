@@ -107,4 +107,4 @@ export interface GatewayResume {
 /**
  * Type alias for Unix timestamp (milliseconds).
  */
-export type UnixTimestamp = number; 
+export type UnixTimestamp = number;

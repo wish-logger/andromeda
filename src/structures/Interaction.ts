@@ -6,7 +6,8 @@ import { Member } from '../structures/Member';
 import { Message } from '../structures/Message';
 import { INTERACTION_CALLBACK } from '../rest/Endpoints';
 import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
-import { Channel, ChannelType } from '../structures/Channel';
+import { Channel } from '../structures/Channel';
+import { ChannelType } from '../types/Channel';
 import { ApplicationCommandOptionType } from '../types/ApplicationCommand';
 import { Role } from '../structures/Role';
 import { ComponentV2Union, ContainerComponent, SectionComponent, TextDisplayComponent, MediaGalleryComponent, SeparatorComponent, ActionRowComponent } from '../types/ComponentV2'; // Import V2 types
@@ -144,12 +145,12 @@ class InteractionOptions {
      * @param name The name of the user option.
      * @returns The User object, or undefined if not found.
      */
-    public async getUser(name: string): Promise<User | undefined> {
+    public async getUser(name: string): Promise<User | null> {
         const option = this._findOptionRecursive(this.options, name);
-        if (!option?.value) return undefined; 
+        if (!option?.value) return null;
         
         const userId = BigInt(option.value as string);
-        let user = this.client.userCache.get(userId);
+        let user: User | null = this.client.userCache.get(userId) || null;
         if (user) return user;
         
         if (this.resolved?.users && this.resolved.users[option.value as string]) {
@@ -164,7 +165,7 @@ class InteractionOptions {
             return user;
         } catch (error) {
             console.error(`Failed to retrieve user ${userId} from interaction options:`, error);
-            return undefined;
+            return null;
         }
     }
 
@@ -311,7 +312,7 @@ export class Interaction {
     public guildId?: bigint;
     public channelId?: bigint;
     public member?: Member;
-    public user?: User;
+    public user: User | null;
     public token: string;
     public version: number;
     public message?: Message;
@@ -335,14 +336,14 @@ export class Interaction {
         this.version = data.version;
 
         if (data.user) {
-            let user = this._client.userCache.get(BigInt(data.user.id));
+            let user: User | null = this._client.userCache.get(BigInt(data.user.id)) || null;
             if (!user) {
                 user = new User(this._client, data.user);
                 this._client.userCache.set(user);
             }
             this.user = user;
         } else {
-            this.user = undefined;
+            this.user = null;
         }
 
         if (data.member) {
@@ -380,11 +381,8 @@ export class Interaction {
             this._client.channelCache.set(channel);
             return channel;
         }
-        // I'm still thiking about returning the most needed data from a channel if cache fails, but for now, return the half full object 
-
-        channel = new Channel(this._client, { id: this.channelId.toString(), type: ChannelType.GUILD_TEXT, guild_id: this.guildId?.toString() });
-        this._client.channelCache.set(channel);
-        return channel;
+        
+        return new Channel(this._client, { id: this.channelId.toString(), type: ChannelType.GUILD_TEXT, guild_id: this.guildId?.toString() });
     }
 
     /**

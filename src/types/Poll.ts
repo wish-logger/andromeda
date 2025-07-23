@@ -10,7 +10,7 @@ export enum PollLayoutType {
  */
 export interface PollMedia {
     text?: string;
-    emoji?: { id?: string; name?: string; animated?: boolean };
+    emoji?: { id?: bigint; name?: string; animated?: boolean };
 }
 
 /**
@@ -45,8 +45,19 @@ export interface Poll {
     id: bigint;
     question: PollMedia;
     answers: PollAnswer[];
-    results: PollResults;
-    expiry: string;
+    expiry?: Date;
     allow_multiselect: boolean;
     layout_type: PollLayoutType;
+    results?: PollResults;
+}
+
+/**
+ * This is the request object used when creating a poll across the different endpoints.
+ */
+export interface PollCreateRequest {
+    question: PollMedia;
+    answers: PollAnswer[];
+    duration?: number; // Number of hours the poll should be open for, up to 32 days. Defaults to 24
+    allow_multiselect?: boolean; // Whether a user can select multiple answers. Defaults to false
+    layout_type?: PollLayoutType; // The layout type of the poll. Defaults to... DEFAULT!!!!!!!!!!!!!!!!!!!!
 }

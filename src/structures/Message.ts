@@ -5,20 +5,97 @@ import { CHANNEL_MESSAGES } from '../rest/Endpoints';
 import { EmbedBuilder } from '../Builders/structures/EmbedBuilder';
 import { Poll, PollAnswer, PollMedia, PollResults, PollAnswerCount, PollLayoutType } from '../types/Poll';
 import { ComponentV2Type, ComponentV2Union, ContainerComponent, SectionComponent, TextDisplayComponent, MediaGalleryComponent, SeparatorComponent, ActionRowComponent, ButtonComponent, StringSelectComponent } from '../types/ComponentV2'; // Import V2 types
+import { MessageFlags, MessageType } from '../types/Message';
 
+/**
+ * Represents an attachment in a message.
+ */
 export interface MessageAttachment {
     id: BigInt;
     filename: string;
+    title?: string;
     description?: string;
     contentType?: string;
     size: number;
     url: string;
     proxyUrl: string;
-    height?: number;
-    width?: number;
+    height?: number | null;
+    width?: number | null;
     ephemeral?: boolean;
+    durationSecs?: number;
+    waveform?: string;
+    flags?: number;
 }
 
+/**
+ * Represents the footer of an embed.
+ */
+export interface EmbedFooter {
+    text: string;
+    iconUrl?: string;
+    proxyIconUrl?: string;
+}
+
+/**
+ * Represents the image of an embed.
+ */
+export interface EmbedImage {
+    url: string;
+    proxyUrl?: string;
+    height?: number;
+    width?: number;
+}
+
+/**
+ * Represents the thumbnail of an embed.
+ */
+export interface EmbedThumbnail {
+    url: string;
+    proxyUrl?: string;
+    height?: number;
+    width?: number;
+}
+
+/**
+ * Represents the video of an embed.
+ */
+export interface EmbedVideo {
+    url?: string;
+    proxyUrl?: string;
+    height?: number;
+    width?: number;
+}
+
+/**
+ * Represents the provider of an embed.
+ */
+export interface EmbedProvider {
+    name?: string;
+    url?: string;
+}
+
+/**
+ * Represents the author of an embed.
+ */
+export interface EmbedAuthor {
+    name: string;
+    url?: string;
+    iconUrl?: string;
+    proxyIconUrl?: string;
+}
+
+/**
+ * Represents a field in an embed.
+ */
+export interface EmbedField {
+    name: string;
+    value: string;
+    inline?: boolean;
+}
+
+/**
+ * Represents embedded content in a message.
+ */
 export interface MessageEmbed {
     title?: string;
     type?: string;
@@ -26,82 +103,163 @@ export interface MessageEmbed {
     url?: string;
     timestamp?: string;
     color?: number;
-    footer?: {
-        text: string;
-        iconUrl?: string;
-        proxyIconUrl?: string;
-    };
-    image?: {
-        url: string;
-        proxyUrl?: string;
-        height?: number;
-        width?: number;
-    };
-    thumbnail?: {
-        url: string;
-        proxyUrl?: string;
-        height?: number;
-        width?: number;
-    };
-    video?: {
-        url?: string;
-        proxyUrl?: string;
-        height?: number;
-        width?: number;
-    };
-    provider?: {
-        name?: string;
-        url?: string;
-    };
-    author?: {
-        name: string;
-        url?: string;
-        iconUrl?: string;
-        proxyIconUrl?: string;
-    };
-    fields?: {
-        name: string;
-        value: string;
-        inline?: boolean;
-    }[];
+    footer?: EmbedFooter;
+    image?: EmbedImage;
+    thumbnail?: EmbedThumbnail;
+    video?: EmbedVideo;
+    provider?: EmbedProvider;
+    author?: EmbedAuthor;
+    fields?: EmbedField[];
+
+    pollQuestionText?: string;
+    victorAnswerVotes?: number;
+    totalVotes?: number;
+    victorAnswerId?: string;
+    victorAnswerText?: string;
+    victorAnswerEmojiId?: string;
+    victorAnswerEmojiName?: string;
+    victorAnswerEmojiAnimated?: boolean;
 }
 
+/**
+ * The reaction count details object contains a breakdown of normal and super reaction counts for the associated emoji.
+ */
+export interface ReactionCountDetails {
+    burst: number;
+    normal: number;
+}
+
+/**
+ * Represents a reaction to a message.
+ */
 export interface MessageReaction {
     count: number;
+    countDetails: ReactionCountDetails;
     me: boolean;
+    meBurst: boolean;
     emoji: {
         id?: BigInt;
         name: string;
         animated?: boolean;
     };
+    burstColors: string[];
 }
 
+/**
+ * Represents a reference to a message.
+ */
 export interface MessageReference {
+    type?: number; // Message Reference Type
     messageId?: BigInt;
     channelId?: BigInt;
     guildId?: BigInt;
     failIfNotExists?: boolean;
 }
 
+/**
+ * Determines how associated data is populated.
+ */
+export enum MessageReferenceType {
+    DEFAULT = 0,
+    FORWARD = 1,
+}
+
+/**
+ * Represents message activity.
+ */
 export interface MessageActivity {
     type: number;
     partyId?: string;
 }
 
+/**
+ * Message Activity Types
+ */
+export enum MessageActivityType {
+    JOIN = 1,
+    SPECTATE = 2,
+    LISTEN = 3,
+    JOIN_REQUEST = 5,
+}
+
+/**
+ * Represents a partial application object.
+ */
 export interface MessageApplication {
     id: BigInt;
-    coverImage?: string;
+    coverImage?: string | null;
     description: string;
-    icon?: string;
+    icon?: string | null;
     name: string;
 }
 
-export interface MessageInteraction {
+/**
+ * Represents a mention of a channel.
+ */
+export interface ChannelMention {
     id: BigInt;
+    guildId: BigInt;
     type: number;
     name: string;
-    user: User;
-    member?: Member;
+}
+
+/**
+ * Determines whether users will receive notifications when you include mentions.
+ */
+export enum AllowedMentionType {
+    ROLES = "roles",
+    USERS = "users",
+    EVERYONE = "everyone",
+}
+
+/**
+ * Represents allowed mentions object.
+ */
+export interface AllowedMentions {
+    parse?: AllowedMentionType[];
+    roles?: BigInt[];
+    users?: BigInt[];
+    repliedUser?: boolean;
+}
+
+/**
+ * Represents data of the role subscription purchase or renewal.
+ */
+export interface RoleSubscriptionData {
+    roleSubscriptionListingId: BigInt;
+    tierName: string;
+    totalMonthsSubscribed: number;
+    isRenewal: boolean;
+}
+
+/**
+ * Information about the call in a private channel.
+ */
+export interface MessageCall {
+    participants: BigInt[];
+    endedTimestamp?: string | null;
+}
+
+/**
+ * Metadata about the interaction.
+ */
+export interface MessageInteractionMetadata {
+    id: BigInt;
+    type: number; // InteractionType
+    user: User; // User who triggered the interaction
+    authorizingIntegrationOwners: Record<number, BigInt>; // dictionary with keys of application integration types
+    originalResponseMessageId?: BigInt; // ID of the original response message
+    targetUser?: User; // The user the command was run on
+    targetMessageId?: BigInt; // The ID of the message the command was run on
+    interactedMessageId?: BigInt; // ID of the message that contained the interactive component
+    triggeringInteractionMetadata?: MessageInteractionMetadata; // Metadata for the interaction that was used to open the modal
+}
+
+/**
+ * Minimal subset of fields in the forwarded message.
+ */
+export interface MessageSnapshot {
+    message: Partial<Message>; // This will be a partial message object
 }
 
 export interface MessageComponent {
@@ -146,61 +304,6 @@ export interface MessageSticker {
     guildId?: BigInt;
     user?: User;
     sortValue?: number;
-}
-
-/**
- * Message types enum
- */
-export enum MessageType {
-    DEFAULT = 0,
-    RECIPIENT_ADD = 1,
-    RECIPIENT_REMOVE = 2,
-    CALL = 3,
-    CHANNEL_NAME_CHANGE = 4,
-    CHANNEL_ICON_CHANGE = 5,
-    CHANNEL_PINNED_MESSAGE = 6,
-    USER_JOIN = 7,
-    GUILD_BOOST = 8,
-    GUILD_BOOST_TIER_1 = 9,
-    GUILD_BOOST_TIER_2 = 10,
-    GUILD_BOOST_TIER_3 = 11,
-    CHANNEL_FOLLOW_ADD = 12,
-    GUILD_DISCOVERY_DISQUALIFIED = 14,
-    GUILD_DISCOVERY_REQUALIFIED = 15,
-    GUILD_DISCOVERY_GRACE_PERIOD_INITIAL_WARNING = 16,
-    GUILD_DISCOVERY_GRACE_PERIOD_FINAL_WARNING = 17,
-    THREAD_CREATED = 18,
-    REPLY = 19,
-    CHAT_INPUT_COMMAND = 20,
-    THREAD_STARTER_MESSAGE = 21,
-    GUILD_INVITE_REMINDER = 22,
-    CONTEXT_MENU_COMMAND = 23,
-    AUTO_MODERATION_ACTION = 24,
-    ROLE_SUBSCRIPTION_PURCHASE = 25,
-    INTERACTION_PREMIUM_UPSELL = 26,
-    STAGE_START = 27,
-    STAGE_END = 28,
-    STAGE_SPEAKER = 29,
-    STAGE_TOPIC = 31,
-    GUILD_APPLICATION_PREMIUM_SUBSCRIPTION = 32,
-}
-
-/**
- * Message flags enum
- */
-export enum MessageFlags {
-    CROSSPOSTED = 1 << 0,
-    IS_CROSSPOST = 1 << 1,
-    SUPPRESS_EMBEDS = 1 << 2,
-    SOURCE_MESSAGE_DELETED = 1 << 3,
-    URGENT = 1 << 4,
-    HAS_THREAD = 1 << 5,
-    EPHEMERAL = 1 << 6,
-    LOADING = 1 << 7,
-    FAILED_TO_MENTION_SOME_ROLES_IN_THREAD = 1 << 8,
-    SUPPRESS_NOTIFICATIONS = 1 << 12,
-    IS_VOICE_MESSAGE = 1 << 13,
-    IS_COMPONENTS_V2 = 1 << 14,
 }
 
 /**
@@ -268,7 +371,7 @@ export class Message {
     public editedTimestamp: Date | null;
 
     /**
-     * Whether this message is a TTS message.
+     * Whether this was a TTS message.
      * @type {boolean}
      */
     public tts: boolean;
@@ -293,9 +396,9 @@ export class Message {
 
     /**
      * Channels specifically mentioned in this message.
-     * @type {any[]}
+     * @type {ChannelMention[] | undefined}
      */
-    public mentionChannels: any[];
+    public mentionChannels?: ChannelMention[];
 
     /**
      * Any attached files.
@@ -311,9 +414,9 @@ export class Message {
 
     /**
      * Reactions to the message.
-     * @type {MessageReaction[]}
+     * @type {MessageReaction[] | undefined}
      */
-    public reactions: MessageReaction[];
+    public reactions?: MessageReaction[];
 
     /**
      * Used for validating a message was sent.
@@ -335,15 +438,15 @@ export class Message {
 
     /**
      * Message activity object.
-     * @type {MessageActivity | null}
+     * @type {MessageActivity | undefined}
      */
-    public activity: MessageActivity | null;
+    public activity?: MessageActivity;
 
     /**
      * Application object.
-     * @type {MessageApplication | null}
+     * @type {MessageApplication | undefined}
      */
-    public application: MessageApplication | null;
+    public application?: MessageApplication;
 
     /**
      * Application id if message is an Interaction or application-owned webhook.
@@ -353,15 +456,15 @@ export class Message {
 
     /**
      * Data showing the source of a crosspost, channel follow add, pin, or reply message.
-     * @type {MessageReference | null}
+     * @type {MessageReference | undefined}
      */
-    public messageReference: MessageReference | null;
+    public messageReference?: MessageReference;
 
     /**
      * Message flags combined as a bitfield.
-     * @type {number | null}
+     * @type {number | undefined}
      */
-    public flags: number | null;
+    public flags?: number;
 
     /**
      * The message associated with the message_reference.
@@ -370,10 +473,23 @@ export class Message {
     public referencedMessage: Message | null;
 
     /**
-     * Sent if the message is a response to an Interaction.
-     * @type {MessageInteraction | null}
+     * The message associated with the message_reference (minimal subset of fields).
+     * @type {MessageSnapshot[] | undefined}
      */
-    public interaction: MessageInteraction | null;
+    public messageSnapshots?: MessageSnapshot[];
+
+    /**
+     * Sent if the message is a response to an Interaction.
+     * @deprecated in favor of interactionMetadata
+     * @type {any | null}
+     */
+    public interaction: any | null;
+
+    /**
+     * Metadata about the interaction, including the source of the interaction and relevant server and user IDs.
+     * @type {MessageInteractionMetadata | undefined}
+     */
+    public interactionMetadata?: MessageInteractionMetadata;
 
     /**
      * The thread that was started from this message.
@@ -383,39 +499,52 @@ export class Message {
 
     /**
      * Sent if the message contains components like buttons, action rows, or other interactive components.
-     * @type {MessageComponent[]}
+     * @type {MessageComponent[] | undefined}
      */
-    public components: MessageComponent[];
+    public components?: MessageComponent[];
 
     /**
      * Sent if the message contains stickers.
-     * @type {MessageSticker[]}
+     * @type {MessageSticker[] | undefined}
      */
-    public stickerItems: MessageSticker[];
+    public stickerItems?: MessageSticker[];
 
     /**
      * The stickers sent with the message.
-     * @type {MessageSticker[]}
+     * @deprecated
+     * @type {MessageSticker[] | undefined}
      */
-    public stickers: MessageSticker[];
+    public stickers?: MessageSticker[];
 
     /**
      * A generally increasing integer with potentially gaps or duplicates that represents the approximate position of the message in a thread.
-     * @type {number | null}
+     * @type {number | undefined}
      */
-    public position: number | null;
+    public position?: number;
 
     /**
      * Data of the role subscription purchase or renewal that prompted this message.
-     * @type {any | null}
+     * @type {RoleSubscriptionData | undefined}
      */
-    public roleSubscriptionData: any | null;
+    public roleSubscriptionData?: RoleSubscriptionData;
+
+    /**
+     * Data for users, members, channels, and roles in the message's auto-populated select menus.
+     * @type {any | undefined}
+     */
+    public resolved?: any; // TODO: Define ResolvedData structure
 
     /**
      * Poll data, if the message is a poll.
-     * @type {Poll | null}
+     * @type {Poll | undefined}
      */
-    public poll: Poll | null;
+    public poll?: Poll;
+
+    /**
+     * The call associated with the message.
+     * @type {MessageCall | undefined}
+     */
+    public call?: MessageCall;
 
     /**
      * Components V2 data, if the message uses the new component system.
@@ -442,25 +571,87 @@ export class Message {
         this.mentionEveryone = data.mention_everyone ?? false;
         this.mentions = (data.mentions ?? []).map((user: any) => new User(client, user));
         this.mentionRoles = data.mention_roles ?? [];
-        this.mentionChannels = data.mention_channels ?? [];
-        this.attachments = (data.attachments ?? []).map((att: any) => ({ ...att, id: BigInt(att.id) }));
-        this.embeds = data.embeds ?? [];
-        this.reactions = (data.reactions ?? []).map((r: any) => ({ ...r, emoji: { ...r.emoji, id: r.emoji.id ? BigInt(r.emoji.id) : undefined } }));
+        this.mentionChannels = (data.mention_channels ?? []).map((c: any) => ({
+            id: BigInt(c.id),
+            guildId: BigInt(c.guild_id),
+            type: c.type,
+            name: c.name,
+        }));
+        this.attachments = (data.attachments ?? []).map((att: any) => ({
+            id: BigInt(att.id),
+            filename: att.filename,
+            title: att.title,
+            description: att.description,
+            contentType: att.content_type,
+            size: att.size,
+            url: att.url,
+            proxyUrl: att.proxy_url,
+            height: att.height,
+            width: att.width,
+            ephemeral: att.ephemeral,
+            durationSecs: att.duration_secs,
+            waveform: att.waveform,
+            flags: att.flags,
+        }));
+        this.embeds = (data.embeds ?? []).map((embed: any) => ({
+            title: embed.title,
+            type: embed.type,
+            description: embed.description,
+            url: embed.url,
+            timestamp: embed.timestamp,
+            color: embed.color,
+            footer: embed.footer ? { text: embed.footer.text, iconUrl: embed.footer.icon_url, proxyIconUrl: embed.footer.proxy_icon_url } : undefined,
+            image: embed.image ? { url: embed.image.url, proxyUrl: embed.image.proxy_url, height: embed.image.height, width: embed.image.width } : undefined,
+            thumbnail: embed.thumbnail ? { url: embed.thumbnail.url, proxyUrl: embed.thumbnail.proxy_url, height: embed.thumbnail.height, width: embed.thumbnail.width } : undefined,
+            video: embed.video ? { url: embed.video.url, proxyUrl: embed.video.proxy_url, height: embed.video.height, width: embed.video.width } : undefined,
+            provider: embed.provider ? { name: embed.provider.name, url: embed.provider.url } : undefined,
+            author: embed.author ? { name: embed.author.name, url: embed.author.url, iconUrl: embed.author.icon_url, proxyIconUrl: embed.author.proxy_icon_url } : undefined,
+            fields: embed.fields ? embed.fields.map((field: any) => ({ name: field.name, value: field.value, inline: field.inline })) : undefined,
+            pollQuestionText: embed.poll_question_text,
+            victorAnswerVotes: embed.victor_answer_votes,
+            totalVotes: embed.total_votes,
+            victorAnswerId: embed.victor_answer_id,
+            victorAnswerText: embed.victor_answer_text,
+            victorAnswerEmojiId: embed.victor_answer_emoji_id,
+            victorAnswerEmojiName: embed.victor_answer_emoji_name,
+            victorAnswerEmojiAnimated: embed.victor_answer_emoji_animated,
+        }));
+        this.reactions = (data.reactions ?? []).map((r: any) => ({
+            count: r.count,
+            countDetails: r.count_details ? { burst: r.count_details.burst, normal: r.count_details.normal } : { burst: 0, normal: r.count },
+            me: r.me,
+            meBurst: r.me_burst,
+            emoji: { ...r.emoji, id: r.emoji.id ? BigInt(r.emoji.id) : undefined },
+            burstColors: r.burst_colors ?? [],
+        }));
         this.nonce = data.nonce ?? null;
         this.pinned = data.pinned ?? false;
         this.webhookId = data.webhook_id ?? null;
-        this.activity = data.activity ?? null;
-        this.application = data.application ? { ...data.application, id: BigInt(data.application.id) } : null;
+        this.activity = data.activity ? { type: data.activity.type, partyId: data.activity.party_id } : undefined;
+        this.application = data.application ? { id: BigInt(data.application.id), coverImage: data.application.cover_image, description: data.application.description, icon: data.application.icon, name: data.application.name } : undefined;
         this.applicationId = data.application_id ?? null;
         this.messageReference = data.message_reference ? {
+            type: data.message_reference.type,
             messageId: data.message_reference.message_id ? BigInt(data.message_reference.message_id) : undefined,
             channelId: data.message_reference.channel_id ? BigInt(data.message_reference.channel_id) : undefined,
             guildId: data.message_reference.guild_id ? BigInt(data.message_reference.guild_id) : undefined,
             failIfNotExists: data.message_reference.fail_if_not_exists
-        } : null;
-        this.flags = data.flags ?? null;
+        } : undefined;
+        this.flags = data.flags ?? undefined;
         this.referencedMessage = data.referenced_message ? new Message(client, data.referenced_message) : null;
+        this.messageSnapshots = (data.message_snapshots ?? []).map((snapshot: any) => ({ message: new Message(client, snapshot.message) }));
         this.interaction = data.interaction ? { ...data.interaction, id: BigInt(data.interaction.id) } : null;
+        this.interactionMetadata = data.interaction_metadata ? {
+            id: BigInt(data.interaction_metadata.id),
+            type: data.interaction_metadata.type,
+            user: new User(client, data.interaction_metadata.user),
+            authorizingIntegrationOwners: data.interaction_metadata.authorizing_integration_owners ? Object.fromEntries(Object.entries(data.interaction_metadata.authorizing_integration_owners).map(([key, value]) => [Number(key), BigInt(value as string)])) : {},
+            originalResponseMessageId: data.interaction_metadata.original_response_message_id ? BigInt(data.interaction_metadata.original_response_message_id) : undefined,
+            targetUser: data.interaction_metadata.target_user ? new User(client, data.interaction_metadata.target_user) : undefined,
+            targetMessageId: data.interaction_metadata.target_message_id ? BigInt(data.interaction_metadata.target_message_id) : undefined,
+            interactedMessageId: data.interaction_metadata.interacted_message_id ? BigInt(data.interaction_metadata.interacted_message_id) : undefined,
+            triggeringInteractionMetadata: data.interaction_metadata.triggering_interaction_metadata ? (data.interaction_metadata.triggering_interaction_metadata.type === 2 /* Message Component */ ? { ...data.interaction_metadata.triggering_interaction_metadata, id: BigInt(data.interaction_metadata.triggering_interaction_metadata.id), user: new User(client, data.interaction_metadata.triggering_interaction_metadata.user), interactedMessageId: BigInt(data.interaction_metadata.triggering_interaction_metadata.interacted_message_id) } : { ...data.interaction_metadata.triggering_interaction_metadata, id: BigInt(data.interaction_metadata.triggering_interaction_metadata.id), user: new User(client, data.interaction_metadata.triggering_interaction_metadata.user) }) : undefined,
+        } : undefined;
         this.thread = data.thread ?? null;
         this.components = (data.components ?? []).map((c: any) => this._parseMessageComponent(c));
         this.stickerItems = (data.sticker_items ?? []).map((s: any) => ({ ...s, id: BigInt(s.id) }));
@@ -470,8 +661,18 @@ export class Message {
             packId: s.pack_id ? BigInt(s.pack_id) : undefined,
             guildId: s.guild_id ? BigInt(s.guild_id) : undefined,
         }));
-        this.position = data.position ?? null;
-        this.roleSubscriptionData = data.role_subscription_data ?? null;
+        this.position = data.position ?? undefined;
+        this.roleSubscriptionData = data.role_subscription_data ? {
+            roleSubscriptionListingId: BigInt(data.role_subscription_data.role_subscription_listing_id),
+            tierName: data.role_subscription_data.tier_name,
+            totalMonthsSubscribed: data.role_subscription_data.total_months_subscribed,
+            isRenewal: data.role_subscription_data.is_renewal,
+        } : undefined;
+        this.resolved = data.resolved ?? undefined;
+        this.call = data.call ? {
+            participants: (data.call.participants ?? []).map(BigInt),
+            endedTimestamp: data.call.ended_timestamp,
+        } : undefined;
         
         if (data.poll) {
             this.poll = {
@@ -487,7 +688,7 @@ export class Message {
                 layout_type: data.poll.layout_type as PollLayoutType,
             };
         } else {
-            this.poll = null;
+            this.poll = undefined;
         }
 
         this.componentsV2 = data.components_v2 ? this._parseComponentV2(data.components_v2) : null;
@@ -896,8 +1097,8 @@ export class Message {
                 width: att.width,
                 ephemeral: att.ephemeral,
             })),
-            components: this.components.map(comp => this._serializeMessageComponent(comp)),
-            sticker_ids: this.stickerItems.map(sticker => sticker.id.toString()),
+            components: this.components?.map(comp => this._serializeMessageComponent(comp)),
+            sticker_ids: this.stickerItems?.map(sticker => sticker.id.toString()),
         };
 
         // Try to forward a poll if exists, throw an ANDOROMEDA error if failed 

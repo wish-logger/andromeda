@@ -17,6 +17,14 @@ import {
     GUILD_APPLICATION_COMMANDS,
     APPLICATION_COMMAND,
     GUILD_APPLICATION_COMMAND,
+    CURRENT_USER,
+    CHANNEL,
+    WEBHOOK,
+    STICKER,
+    GUILD_SCHEDULED_EVENT,
+    CHANNEL_MESSAGE,
+    GUILD_ROLE,
+    USER_ENDPOINT,
 } from '../rest/Endpoints';
 
 /**
@@ -280,7 +288,7 @@ export class Client extends EventEmitter {
         if (this.user) {
             return;
         }
-        const userData = await this.rest.request('GET', '/users/@me');
+        const userData = await this.rest.request('GET', CURRENT_USER());
         this.user = new User(this, userData);
         this.userCache.set(this.user);
     }
@@ -288,44 +296,130 @@ export class Client extends EventEmitter {
     /**
      * Fetches a channel by its ID, prioritizing the cache.
      * @param {bigint} channelId The ID of the channel to fetch.
-     * @returns {Promise<Channel | undefined>} The Channel object, or undefined if not found.
+     * @returns {Promise<Channel | null>} The Channel object, or null if not found.
      */
-    public async fetchChannel(channelId: bigint): Promise<any | undefined> {
+    public async fetchChannel(channelId: bigint): Promise<any | null> {
         let channel = this.channelCache.get(channelId);
         if (channel) {
             return channel;
         }
 
         try {
-            const channelData = await this.rest.request('GET', `/channels/${channelId.toString()}`);
+            const channelData = await this.rest.request('GET', CHANNEL(channelId.toString()));
             channel = new (await import('../structures/Channel')).Channel(this, channelData);
             this.channelCache.set(channel);
             return channel;
         } catch (error) {
             console.error(`Failed to fetch channel ${channelId}:`, error);
-            return undefined;
+            return null;
         }
     }
 
     /**
      * Fetches a user by its ID, prioritizing the cache.
      * @param {bigint} userId The ID of the user to fetch.
-     * @returns {Promise<User | undefined>} The User object, or undefined if not found.
+     * @returns {Promise<User | null>} The User object, or null if not found.
      */
-    public async fetchUser(userId: bigint): Promise<User | undefined> {
+    public async fetchUser(userId: bigint): Promise<User | null> {
         let user = this.userCache.get(userId);
         if (user) {
             return user;
         }
 
         try {
-            const userData = await this.rest.request('GET', `/users/${userId.toString()}`);
+            const userData = await this.rest.request('GET', USER_ENDPOINT(userId.toString()));
             user = new User(this, userData);
             this.userCache.set(user);
             return user;
         } catch (error) {
             console.error(`Failed to fetch user ${userId}:`, error);
-            return undefined;
+            return null;
+        }
+    }
+
+    /**
+     * Fetches a webhook by its ID.
+     * @param {bigint} webhookId The ID of the webhook to fetch.
+     * @returns {Promise<Webhook | null>} The Webhook object, or null if not found.
+     */
+    public async fetchWebhook(webhookId: bigint): Promise<any | null> {
+        try {
+            const webhookData = await this.rest.request('GET', WEBHOOK(webhookId.toString()));
+            const WebhookClass = (await import('../structures/Webhook')).Webhook;
+            const webhook = new WebhookClass(this, webhookData);
+            return webhook;
+        } catch (error) {
+            console.error(`Failed to fetch webhook ${webhookId}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Fetches a sticker by its ID.
+     * @param {bigint} stickerId The ID of the sticker to fetch.
+     * @returns {Promise<Sticker | null>} The Sticker object, or null if not found.
+     */
+    public async fetchSticker(stickerId: bigint): Promise<any | null> {
+        try {
+            const stickerData = await this.rest.request('GET', STICKER(stickerId.toString()));
+            const StickerClass = (await import('../structures/Sticker')).Sticker;
+            const sticker = new StickerClass(this, stickerData);
+            return sticker;
+        } catch (error) {
+            console.error(`Failed to fetch sticker ${stickerId}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Fetches a guild scheduled event by its ID.
+     * @param {bigint} guildId The ID of the guild the event belongs to.
+     * @param {bigint} eventId The ID of the event to fetch.
+     * @returns {Promise<GuildScheduledEvent | null>} The GuildScheduledEvent object, or null if not found.
+     */
+    public async fetchGuildScheduledEvent(guildId: bigint, eventId: bigint): Promise<any | null> {
+        try {
+            const eventData = await this.rest.request('GET', GUILD_SCHEDULED_EVENT(guildId.toString(), eventId.toString()));
+            const GuildScheduledEventClass = (await import('../structures/GuildScheduledEvent')).GuildScheduledEvent;
+            const event = new GuildScheduledEventClass(this, eventData);
+            return event;
+        } catch (error) {
+            console.error(`Failed to fetch guild scheduled event ${eventId}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Fetches an application command by its ID.
+     * @param {bigint} applicationId The ID of the application.
+     * @param {bigint} commandId The ID of the command to fetch.
+     * @returns {Promise<ApplicationCommandData | null>} The ApplicationCommand data, or null if not found.
+     */
+    public async fetchApplicationCommand(applicationId: bigint, commandId: bigint): Promise<any | null> {
+        try {
+            const commandData = await this.rest.request('GET', APPLICATION_COMMAND(applicationId.toString(), commandId.toString()));
+            return commandData; 
+        } catch (error) {
+            console.error(`Failed to fetch application command ${commandId}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Fetches a message by its channel ID and message ID.
+     * @param {bigint} channelId The ID of the channel the message belongs to.
+     * @param {bigint} messageId The ID of the message to fetch.
+     * @returns {Promise<Message | null>} The Message object, or null if not found.
+     */
+    public async fetchMessage(channelId: bigint, messageId: bigint): Promise<any | null> {
+        try {
+            const messageData = await this.rest.request('GET', CHANNEL_MESSAGE(channelId.toString(), messageId.toString()));
+            const MessageClass = (await import('../structures/Message')).Message;
+            const message = new MessageClass(this, messageData);
+            return message;
+        } catch (error) {
+            console.error(`Failed to fetch message ${messageId}:`, error);
+            return null;
         }
     }
 
@@ -333,9 +427,9 @@ export class Client extends EventEmitter {
      * Fetches a role by its ID from a specific guild, prioritizing the guild's cache.
      * @param {bigint} guildId The ID of the guild the role belongs to.
      * @param {bigint} roleId The ID of the role to fetch.
-     * @returns {Promise<Role | undefined>} The Role object, or undefined if not found.
+     * @returns {Promise<Role | null>} The Role object, or null if not found.
      */
-    public async fetchRole(guildId: bigint, roleId: bigint): Promise<any | undefined> {
+    public async fetchRole(guildId: bigint, roleId: bigint): Promise<any | null> {
 
         const guild = this.guildCache.get(guildId);
         if (guild) {
@@ -344,7 +438,7 @@ export class Client extends EventEmitter {
         }
 
         try {
-            const roleData = await this.rest.request('GET', `/guilds/${guildId.toString()}/roles/${roleId.toString()}`);
+            const roleData = await this.rest.request('GET', GUILD_ROLE(guildId.toString(), roleId.toString()));
             const RoleClass = (await import('../structures/Role')).Role;
             const role = new RoleClass(this, roleData, guildId.toString());
             
@@ -354,7 +448,7 @@ export class Client extends EventEmitter {
             return role;
         } catch (error) {
             console.error(`Failed to fetch role ${roleId} from guild ${guildId}:`, error);
-            return undefined;
+            return null;
         }
     }
 }

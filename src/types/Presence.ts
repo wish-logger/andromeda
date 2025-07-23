@@ -1,3 +1,5 @@
+import { User } from '../structures/User';
+
 /**
  * Represents the presence data for a Discord user or bot.
  */
@@ -19,6 +21,10 @@ export interface PresenceData {
      * Whether the client is AFK.
      */
     afk: boolean;
+    /**
+     * User structure
+     */
+    user: User;
 }
 
 /**

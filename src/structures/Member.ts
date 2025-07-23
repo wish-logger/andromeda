@@ -1,6 +1,22 @@
 import { Client } from '../client/Client';
 import { User } from './User';
 
+export interface PartialMember {
+    id?: bigint;
+    user?: User;
+    nick?: string | null;
+    avatar?: string | null;
+    roles: bigint[];
+    joinedAt?: Date;
+    premiumSince?: Date | null;
+    deaf: boolean;
+    mute: boolean;
+    flags: number;
+    pending?: boolean;
+    permissions?: string;
+    communicationDisabledUntil?: Date | null;
+}
+
 /**
  * Represents a member of a guild on Discord.
  */
@@ -376,5 +392,35 @@ export class Member {
      */
     public hasAllPermissions(permissions: bigint[]): boolean {
         return permissions.every(permission => this.hasPermission(permission));
+    }
+
+    /**
+     * Returns a serializable object representation of the member.
+     * @returns {object}
+     */
+    public toJSON(): object {
+        return {
+            user: this.user.toJSON(),
+            nick: this.nick,
+            avatar: this.avatar,
+            roles: this.roles,
+            joinedAt: this.joinedAt.toISOString(),
+            premiumSince: this.premiumSince?.toISOString() || null,
+            deaf: this.deaf,
+            mute: this.mute,
+            flags: this.flags,
+            pending: this.pending,
+            permissions: this.permissions,
+            communicationDisabledUntil: this.communicationDisabledUntil?.toISOString() || null,
+            guildId: this.guildId.toString(),
+        };
+    }
+
+    /**
+     * Returns a formatted string representation of the member.
+     * @returns {string}
+     */
+    public inspect(): string {
+        return `Member { id: '${this.user.id}', displayName: '${this.displayName}', guildId: '${this.guildId}' }`;
     }
 }

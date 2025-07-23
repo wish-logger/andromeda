@@ -30,4 +30,4 @@ export interface ClientOptions {
     intents?: number | GatewayIntentBits[];
     clusterId?: number; // (0-indexed)
     totalClusters?: number;
-} 
+}

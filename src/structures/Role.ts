@@ -288,7 +288,7 @@ export class Role {
      * @returns {string}
      */
     public getHexColor(): string {
-        return `#${this.color.toString(16).padStart(6, '0')}`; // Color is number, so toString is fine
+        return `#${this.color.toString(16).padStart(6, '0')}`;
     }
 
     /**
@@ -299,8 +299,9 @@ export class Role {
         const guild = await this.client.guilds.fetch(this.guildId);
         if (!guild) throw new Error('Guild not found');
         
-        const members = await guild.members();
-        return members.filter((member: any) => member.roles.cache.has(this.id));
+        const members = guild.members;
+        if (!members) return [];
+        return members.filter((member: any) => member.roles.includes(this.id));
     }
 
     /**
@@ -328,8 +329,21 @@ export class Role {
         if (options.permissions !== undefined) data.permissions = options.permissions.toString();
         if (options.color !== undefined) data.color = options.color;
         if (options.hoist !== undefined) data.hoist = options.hoist;
-        if (options.icon !== undefined) data.icon = options.icon;
-        if (options.unicodeEmoji !== undefined) data.unicode_emoji = options.unicodeEmoji;
+        
+        // Handle icon for string, null, or undefined
+        if (options.icon === null) {
+            data.icon = null;
+        } else if (options.icon !== undefined) {
+            data.icon = options.icon;
+        }
+
+        // Handle unicodeEmoji for string, null, or undefined
+        if (options.unicodeEmoji === null) {
+            data.unicode_emoji = null;
+        } else if (options.unicodeEmoji !== undefined) {
+            data.unicode_emoji = options.unicodeEmoji;
+        }
+
         if (options.mentionable !== undefined) data.mentionable = options.mentionable;
         if (options.style !== undefined) data.style = options.style;
 
