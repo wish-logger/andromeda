@@ -104,7 +104,7 @@ export class Channel {
         this.threadMetadata = data.thread_metadata ? {
             archived: data.thread_metadata.archived,
             autoArchiveDuration: data.thread_metadata.auto_archive_duration,
-            archiveTimestamp: new Date(data.thread_metadata.archive_timestamp),
+            archiveTimestamp: data.thread_metadata.archive_timestamp ? new Date(data.thread_metadata.archive_timestamp) : undefined,
             locked: data.thread_metadata.locked,
             invitable: data.thread_metadata.invitable,
             createTimestamp: data.thread_metadata.create_timestamp ? new Date(data.thread_metadata.create_timestamp) : undefined,
@@ -205,10 +205,10 @@ export class Channel {
             thread_metadata: this.threadMetadata ? {
                 archived: this.threadMetadata.archived,
                 auto_archive_duration: this.threadMetadata.autoArchiveDuration,
-                archive_timestamp: this.threadMetadata.archiveTimestamp.toISOString(),
+                archive_timestamp: this.threadMetadata.archiveTimestamp?.toISOString() ?? null,
                 locked: this.threadMetadata.locked,
                 invitable: this.threadMetadata.invitable,
-                create_timestamp: this.threadMetadata.createTimestamp?.toISOString() || undefined,
+                create_timestamp: this.threadMetadata.createTimestamp?.toISOString(),
             } : undefined,
             member: this.member ? {
                 id: this.member.id?.toString(),

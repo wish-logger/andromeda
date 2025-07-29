@@ -107,7 +107,7 @@ export interface ActionRowComponent extends BaseComponentV2 {
 export interface StringSelectComponent extends BaseComponentV2 {
     type: ComponentV2Type.STRING_SELECT;
     custom_id: string;
-    options: { label: string; value: string; description?: string; emoji?: { id?: string; name?: string; animated?: boolean } }[];
+    options: { label: string; value: string; description?: string; emoji?: { id?: string; name?: string; animated?: boolean }; default?: boolean }[]; // Added default?: boolean
     placeholder?: string;
     min_values?: number;
     max_values?: number;
@@ -137,4 +137,6 @@ export type ComponentV2Union =
     MediaGalleryComponent |
     SectionComponent |
     ContainerComponent |
-    ActionRowComponent;
+    ActionRowComponent |
+    ButtonComponent |
+    StringSelectComponent;
