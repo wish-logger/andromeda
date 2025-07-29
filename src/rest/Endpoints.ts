@@ -105,6 +105,18 @@ export const GUILD_ROLE = (guildId: string, roleId: string) => `/guilds/${guildI
 export const INVITE = (inviteCode: string) => `/invites/${inviteCode}`;
 
 /**
+ * Endpoint for fetching all emojis for a guild.
+ * Parameters: guildId
+ */
+export const GUILD_EMOJIS = (guildId: string) => `/guilds/${guildId}/emojis`;
+
+/**
+ * Endpoint for fetching, modifying, or deleting a specific guild emoji.
+ * Parameters: guildId, emojiId
+ */
+export const GUILD_EMOJI = (guildId: string, emojiId: string) => `/guilds/${guildId}/emojis/${emojiId}`;
+
+/**
  * Endpoint for creating a new lobby.
  */
 export const CREATE_LOBBY = () => `/lobbies`;
@@ -156,3 +168,15 @@ export const LINK_CHANNEL_TO_LOBBY = (lobbyId: string) => `/lobbies/${lobbyId}/c
  * Parameters: lobbyId
  */
 export const UNLINK_CHANNEL_FROM_LOBBY = (lobbyId: string) => `/lobbies/${lobbyId}/channel-linking`;
+
+/**
+ * Endpoint for fetching all auto moderation rules for a guild.
+ * Parameters: guildId
+ */
+export const GUILD_AUTO_MODERATION_RULES = (guildId: string) => `/guilds/${guildId}/auto-moderation/rules`;
+
+/**
+ * Endpoint for fetching, modifying, or deleting a specific auto moderation rule.
+ * Parameters: guildId, ruleId
+ */
+export const GUILD_AUTO_MODERATION_RULE = (guildId: string, ruleId: string) => `/guilds/${guildId}/auto-moderation/rules/${ruleId}`;

@@ -30,6 +30,10 @@ import {
     GUILD_ROLE,
     USER_ENDPOINT,
 } from '../rest/Endpoints';
+import { GUILD_EMOJIS, GUILD_EMOJI } from '../rest/Endpoints';
+import { GUILD_AUTO_MODERATION_RULES, GUILD_AUTO_MODERATION_RULE } from '../rest/Endpoints';
+import { Emoji } from '../structures/Emoji';
+import { AutoModerationRule } from '../structures/AutoModerationRule';
 
 /**
  * The main client for interacting with the Discord API.
@@ -477,6 +481,252 @@ export class Client extends EventEmitter {
         } catch (error) {
             console.error(`Failed to fetch role ${roleId} from guild ${guildId}:`, error);
             return null;
+        }
+    }
+
+    /**
+     * Fetches all emojis for a given guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @returns {Promise<Emoji[]>} An array of Emoji objects.
+     */
+    public async fetchGuildEmojis(guildId: bigint): Promise<Emoji[]> {
+        try {
+            const emojiData = await this.rest.request('GET', GUILD_EMOJIS(guildId.toString()));
+            const EmojiClass = (await import('../structures/Emoji')).Emoji;
+            return emojiData.map((e: any) => new EmojiClass(this, e));
+        } catch (error) {
+            console.error(`Failed to fetch emojis for guild ${guildId}:`, error);
+            return [];
+        }
+    }
+
+    /**
+     * Fetches a specific emoji from a guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {bigint} emojiId The ID of the emoji to fetch.
+     * @returns {Promise<Emoji | null>} The Emoji object, or null if not found.
+     */
+    public async fetchGuildEmoji(guildId: bigint, emojiId: bigint): Promise<Emoji | null> {
+        try {
+            const emojiData = await this.rest.request('GET', GUILD_EMOJI(guildId.toString(), emojiId.toString()));
+            const EmojiClass = (await import('../structures/Emoji')).Emoji;
+            return new EmojiClass(this, emojiData);
+        } catch (error) {
+            console.error(`Failed to fetch emoji ${emojiId} from guild ${guildId}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Creates a new emoji in a guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {object} options The emoji creation options. Requires `name` and `image` (base64 encoded Data URI).
+     * @param {string} [options.name] The name of the emoji.
+     * @param {string} [options.image] The 128x128 image for the emoji, encoded as a Data URI.
+     * @param {bigint[]} [options.roles] Role IDs allowed to use this emoji.
+     * @param {string} [reason] The reason for creating the emoji.
+     * @returns {Promise<Emoji>} The created Emoji object.
+     */
+    public async createGuildEmoji(guildId: bigint, options: { name: string; image: string; roles?: bigint[]; }, reason?: string): Promise<Emoji> {
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        const payload = {
+            name: options.name,
+            image: options.image,
+            roles: options.roles?.map(id => id.toString()),
+        };
+
+        try {
+            const emojiData = await this.rest.request('POST', GUILD_EMOJIS(guildId.toString()), payload, headers);
+            const EmojiClass = (await import('../structures/Emoji')).Emoji;
+            return new EmojiClass(this, emojiData);
+        } catch (error) {
+            console.error(`Failed to create emoji in guild ${guildId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Edits an existing emoji in a guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {bigint} emojiId The ID of the emoji to edit.
+     * @param {object} options The emoji edit options. Can include `name`, `roles`.
+     * @param {string} [options.name] The new name of the emoji.
+     * @param {bigint[]} [options.roles] New role IDs allowed to use this emoji.
+     * @param {string} [reason] The reason for editing the emoji.
+     * @returns {Promise<Emoji>} The edited Emoji object.
+     */
+    public async editGuildEmoji(guildId: bigint, emojiId: bigint, options: { name?: string; roles?: bigint[]; }, reason?: string): Promise<Emoji> {
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        const payload: any = {};
+        if (options.name) payload.name = options.name;
+        if (options.roles) payload.roles = options.roles.map(id => id.toString());
+
+        try {
+            const emojiData = await this.rest.request('PATCH', GUILD_EMOJI(guildId.toString(), emojiId.toString()), payload, headers);
+            const EmojiClass = (await import('../structures/Emoji')).Emoji;
+            return new EmojiClass(this, emojiData);
+        } catch (error) {
+            console.error(`Failed to edit emoji ${emojiId} in guild ${guildId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Deletes an emoji from a guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {bigint} emojiId The ID of the emoji to delete.
+     * @param {string} [reason] The reason for deleting the emoji.
+     * @returns {Promise<void>}
+     */
+    public async deleteGuildEmoji(guildId: bigint, emojiId: bigint, reason?: string): Promise<void> {
+        const headers: any = {};
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        try {
+            await this.rest.request('DELETE', GUILD_EMOJI(guildId.toString(), emojiId.toString()), undefined, headers);
+        } catch (error) {
+            console.error(`Failed to delete emoji ${emojiId} from guild ${guildId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Fetches all auto moderation rules for a given guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @returns {Promise<AutoModerationRule[]>} An array of AutoModerationRule objects.
+     */
+    public async fetchGuildAutoModerationRules(guildId: bigint): Promise<AutoModerationRule[]> {
+        try {
+            const rulesData = await this.rest.request('GET', GUILD_AUTO_MODERATION_RULES(guildId.toString()));
+            const AutoModerationRuleClass = (await import('../structures/AutoModerationRule')).AutoModerationRule;
+            return rulesData.map((r: any) => new AutoModerationRuleClass(this, r));
+        } catch (error) {
+            console.error(`Failed to fetch auto moderation rules for guild ${guildId}:`, error);
+            return [];
+        }
+    }
+
+    /**
+     * Fetches a specific auto moderation rule from a guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {bigint} ruleId The ID of the rule to fetch.
+     * @returns {Promise<AutoModerationRule | null>} The AutoModerationRule object, or null if not found.
+     */
+    public async fetchGuildAutoModerationRule(guildId: bigint, ruleId: bigint): Promise<AutoModerationRule | null> {
+        try {
+            const ruleData = await this.rest.request('GET', GUILD_AUTO_MODERATION_RULE(guildId.toString(), ruleId.toString()));
+            const AutoModerationRuleClass = (await import('../structures/AutoModerationRule')).AutoModerationRule;
+            return new AutoModerationRuleClass(this, ruleData);
+        } catch (error) {
+            console.error(`Failed to fetch auto moderation rule ${ruleId} from guild ${guildId}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Creates a new auto moderation rule in a guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {object} options The rule creation options.
+     * @param {string} options.name The name of the rule.
+     * @param {number} options.eventType The event type for the rule (AutoModerationEventType).
+     * @param {number} options.triggerType The trigger type for the rule (AutoModerationTriggerType).
+     * @param {object} [options.triggerMetadata] Additional data used to determine whether a rule should be triggered.
+     * @param {object[]} options.actions Actions which will execute whenever a rule is triggered.
+     * @param {boolean} [options.enabled=true] Whether the rule is enabled.
+     * @param {bigint[]} [options.exemptRoles] The IDs of roles that are exempt from the rule.
+     * @param {bigint[]} [options.exemptChannels] The IDs of channels that are exempt from the rule.
+     * @param {string} [reason] The reason for creating the rule.
+     * @returns {Promise<AutoModerationRule>} The created AutoModerationRule object.
+     */
+    public async createGuildAutoModerationRule(guildId: bigint, options: { name: string; eventType: number; triggerType: number; triggerMetadata?: any; actions: any[]; enabled?: boolean; exemptRoles?: bigint[]; exemptChannels?: bigint[]; }, reason?: string): Promise<AutoModerationRule> {
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        const payload = {
+            name: options.name,
+            event_type: options.eventType,
+            trigger_type: options.triggerType,
+            trigger_metadata: options.triggerMetadata,
+            actions: options.actions,
+            enabled: options.enabled ?? true,
+            exempt_roles: options.exemptRoles?.map(id => id.toString()),
+            exempt_channels: options.exemptChannels?.map(id => id.toString()),
+        };
+
+        try {
+            const ruleData = await this.rest.request('POST', GUILD_AUTO_MODERATION_RULES(guildId.toString()), payload, headers);
+            const AutoModerationRuleClass = (await import('../structures/AutoModerationRule')).AutoModerationRule;
+            return new AutoModerationRuleClass(this, ruleData);
+        } catch (error) {
+            console.error(`Failed to create auto moderation rule in guild ${guildId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Edits an existing auto moderation rule in a guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {bigint} ruleId The ID of the rule to edit.
+     * @param {object} options The rule edit options. Can include `name`, `eventType`, `triggerType`, `triggerMetadata`, `actions`, `enabled`, `exemptRoles`, `exemptChannels`.
+     * @param {string} [reason] The reason for editing the rule.
+     * @returns {Promise<AutoModerationRule>} The edited AutoModerationRule object.
+     */
+    public async editGuildAutoModerationRule(guildId: bigint, ruleId: bigint, options: { name?: string; eventType?: number; triggerType?: number; triggerMetadata?: any; actions?: any[]; enabled?: boolean; exemptRoles?: bigint[]; exemptChannels?: bigint[]; }, reason?: string): Promise<AutoModerationRule> {
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        const payload: any = {};
+        if (options.name) payload.name = options.name;
+        if (options.eventType) payload.event_type = options.eventType;
+        if (options.triggerType) payload.trigger_type = options.triggerType;
+        if (options.triggerMetadata) payload.trigger_metadata = options.triggerMetadata;
+        if (options.actions) payload.actions = options.actions;
+        if (typeof options.enabled === 'boolean') payload.enabled = options.enabled;
+        if (options.exemptRoles) payload.exempt_roles = options.exemptRoles.map(id => id.toString());
+        if (options.exemptChannels) payload.exempt_channels = options.exemptChannels.map(id => id.toString());
+
+        try {
+            const ruleData = await this.rest.request('PATCH', GUILD_AUTO_MODERATION_RULE(guildId.toString(), ruleId.toString()), payload, headers);
+            const AutoModerationRuleClass = (await import('../structures/AutoModerationRule')).AutoModerationRule;
+            return new AutoModerationRuleClass(this, ruleData);
+        } catch (error) {
+            console.error(`Failed to edit auto moderation rule ${ruleId} in guild ${guildId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Deletes an auto moderation rule from a guild.
+     * @param {bigint} guildId The ID of the guild.
+     * @param {bigint} ruleId The ID of the rule to delete.
+     * @param {string} [reason] The reason for deleting the rule.
+     * @returns {Promise<void>}
+     */
+    public async deleteGuildAutoModerationRule(guildId: bigint, ruleId: bigint, reason?: string): Promise<void> {
+        const headers: any = {};
+        if (reason) {
+            headers['X-Audit-Log-Reason'] = encodeURIComponent(reason);
+        }
+
+        try {
+            await this.rest.request('DELETE', GUILD_AUTO_MODERATION_RULE(guildId.toString(), ruleId.toString()), undefined, headers);
+        } catch (error) {
+            console.error(`Failed to delete auto moderation rule ${ruleId} from guild ${guildId}:`, error);
+            throw error;
         }
     }
 }
