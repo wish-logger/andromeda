@@ -2,6 +2,10 @@
 
 Andromeda - fast, asynchronous, and type-safe Discord API wrapper built with TypeScript, designed for [Wish Logger](https://wishlogger.xyz/).
 
+## Documentation
+
+You can find the full documentation [here](https://wish-logger.github.io/andromeda/).
+
 Andromeda is not built for any other Discord bots out there. Its purpose is to be a fast, type-safe, and memory-efficient wrapper. Since I just started developing it, it will take some time to add every feature that Wish needs to function.
 
 ## Simple index.ts
